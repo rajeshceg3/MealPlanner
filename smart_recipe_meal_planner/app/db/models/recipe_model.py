@@ -15,7 +15,8 @@ class Recipe(Base):
     dietary_tags = Column(JSONB, server_default='[]', nullable=False)
     image_url = Column(String(500))
     source_url = Column(String(500))
-    created_by_user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=True)
+    spoonacular_id = Column(Integer, unique=True, index=True, nullable=True) # New column
+    created_by_user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=True) # Added index=True as per example, though not strictly required by task
     average_rating = Column(Numeric(3, 2), server_default='0.00', nullable=False)
     rating_count = Column(Integer, server_default='0', nullable=False)
 

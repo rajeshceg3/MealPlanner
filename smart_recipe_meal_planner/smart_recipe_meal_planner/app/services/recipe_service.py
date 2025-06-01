@@ -1,23 +1,31 @@
 
+import math
+import logging # New
+from uuid import UUID # Changed
+from typing import List, Optional, Tuple, Dict, Any
+
+from sqlalchemy import or_, func # or_ added
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.future import select
-from sqlalchemy import func
-from typing import List, Optional, Tuple, Dict, Any
-import uuid
-import math
+from pydantic import parse_obj_as
 
 from app.db.models.recipe_model import Recipe as DBRecipe
 from app.db.models.ingredient_model import Ingredient as DBIngredient
 from app.db.models.recipe_ingredient_model import RecipeIngredient as DBRecipeIngredient
-from app.models.recipe_schemas import RecipeCreate, RecipeUpdate, RecipePublic, InstructionStepPublic, InstructionStepCreate
+from app.models.recipe_schemas import RecipeCreate, RecipeUpdate, RecipePublic, InstructionStepPublic, InstructionStepCreate, RecipeIngredientLinkCreate # RecipeIngredientLinkCreate added
 from app.models.common_schemas import IngredientUsagePublic, RecipeIngredientLink
-from pydantic import parse_obj_as
+
+# Added Spoonacular client and mapper imports
+from app.clients.spoonacular_client import SpoonacularClient, SpoonacularException, SpoonacularRateLimitException
+from app.services.recipe_mapper import map_spoonacular_data_to_dict
+
+logger = logging.getLogger(__name__) # Added logger
 
 class RecipeService:
     def __init__(self, db: Session):
         self.db = db
 
-    async def create_recipe(self, recipe_in: RecipeCreate, user_id: uuid.UUID) -> RecipePublic:
+    async def create_recipe(self, recipe_in: RecipeCreate, user_id: UUID) -> RecipePublic:
         # Convert instructions to list of dicts for JSONB storage
         instructions_data = [instr.model_dump() for instr in recipe_in.instructions]
 
@@ -34,7 +42,8 @@ class RecipeService:
             dietary_tags=recipe_in.dietary_tags,
             image_url=str(recipe_in.image_url) if recipe_in.image_url else None,
             source_url=str(recipe_in.source_url) if recipe_in.source_url else None,
-            created_by_user_id=user_id
+            created_by_user_id=user_id,
+            spoonacular_id=recipe_in.spoonacular_id # Added spoonacular_id
         )
 
         # Handle ingredients
@@ -104,7 +113,8 @@ class RecipeService:
             instructions=parsed_instructions,
             recipe_ingredients=recipe_ingredients_public,
             user_has_saved=None, # Not handled in this method
-            user_rating=None     # Not handled in this method
+            user_rating=None,    # Not handled in this method
+            spoonacular_id=db_recipe_obj.spoonacular_id # Added spoonacular_id
         )
 
     async def get_recipes_list(
@@ -112,7 +122,7 @@ class RecipeService:
         dietary_tags: Optional[List[str]] = None, max_cook_time: Optional[int] = None,
         search_query: Optional[str] = None
     ) -> Tuple[List[RecipePublic], Dict[str, Any]]:
-        offset = (page - 1) * limit
+        offset = (page - 1) * limit # type: ignore
 
         # Base query for fetching recipes
         stmt = (
@@ -202,7 +212,8 @@ class RecipeService:
                     instructions=parsed_instructions,
                     recipe_ingredients=recipe_ingredients_public,
                     user_has_saved=None, # Not determined in this list view
-                    user_rating=None     # Not determined in this list view
+                    user_rating=None,    # Not determined in this list view
+                    spoonacular_id=db_recipe.spoonacular_id # Added spoonacular_id
                 )
             )
 
@@ -219,7 +230,7 @@ class RecipeService:
 
         return recipes_public_list, pagination_meta
 
-    async def get_recipe_by_id(self, recipe_id: uuid.UUID, user_id: Optional[uuid.UUID] = None) -> Optional[RecipePublic]:
+    async def get_recipe_by_id(self, recipe_id: UUID, user_id: Optional[UUID] = None) -> Optional[RecipePublic]:
         # Construct query with eager loading
         stmt = (
             select(DBRecipe)
@@ -295,10 +306,11 @@ class RecipeService:
             instructions=parsed_instructions,
             recipe_ingredients=recipe_ingredients_public,
             user_has_saved=user_has_saved_status,
-            user_rating=user_specific_rating
+            user_rating=user_specific_rating,
+            spoonacular_id=db_recipe.spoonacular_id # Added spoonacular_id
         )
 
-    async def update_recipe(self, recipe_id: uuid.UUID, recipe_in: RecipeUpdate, user_id: uuid.UUID) -> Optional[RecipePublic]:
+    async def update_recipe(self, recipe_id: UUID, recipe_in: RecipeUpdate, user_id: UUID) -> Optional[RecipePublic]:
         # Fetch the recipe with its ingredients
         stmt = (
             select(DBRecipe)
@@ -417,15 +429,16 @@ class RecipeService:
             instructions=parsed_instructions,
             recipe_ingredients=recipe_ingredients_public,
             user_has_saved=None, # TODO: Implement if needed
-            user_rating=None     # TODO: Implement if needed
+            user_rating=None,    # TODO: Implement if needed
+            spoonacular_id=db_recipe.spoonacular_id # Added spoonacular_id
         )
 
-    async def delete_recipe(self, recipe_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    async def delete_recipe(self, recipe_id: UUID, user_id: UUID) -> bool:
         stmt = select(DBRecipe).where(DBRecipe.id == recipe_id)
         # For async, ensure self.db.execute is compatible.
-        # result = await self.db.execute(stmt)
-        # db_recipe = result.scalar_one_or_none()
-        db_recipe = self.db.execute(stmt).scalar_one_or_none()
+        # result = await self.db.execute(stmt) # type: ignore
+        # db_recipe = result.scalar_one_or_none() # type: ignore
+        db_recipe = self.db.execute(stmt).scalar_one_or_none() # type: ignore
 
 
         if db_recipe is None:
@@ -446,21 +459,204 @@ class RecipeService:
 
         return True
 
-    async def add_recipe_to_favorites(self, recipe_id: uuid.UUID, user_id: uuid.UUID) -> Any:
+    async def add_recipe_to_favorites(self, recipe_id: UUID, user_id: UUID) -> Any:
         # Placeholder: return would be RecipePublic
         print(f"RecipeService: add_recipe_to_favorites called for recipe_id: {recipe_id}, user_id: {user_id}")
         raise NotImplementedError("RecipeService: add_recipe_to_favorites not implemented")
 
-    async def remove_recipe_from_favorites(self, recipe_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    async def remove_recipe_from_favorites(self, recipe_id: UUID, user_id: UUID) -> bool:
         print(f"RecipeService: remove_recipe_from_favorites called for recipe_id: {recipe_id}, user_id: {user_id}")
         raise NotImplementedError("RecipeService: remove_recipe_from_favorites not implemented")
 
-    async def rate_recipe(self, recipe_id: uuid.UUID, rating_in: Any, user_id: uuid.UUID) -> Any:
+    async def rate_recipe(self, recipe_id: UUID, rating_in: Any, user_id: UUID) -> Any:
         # Placeholder: rating_in would be RecipeRatingCreate, return would be RecipeRatingPublic
         print(f"RecipeService: rate_recipe called for recipe_id: {recipe_id}, user_id: {user_id} with rating: {rating_in}")
         raise NotImplementedError("RecipeService: rate_recipe not implemented")
 
-    async def get_ratings_for_recipe(self, recipe_id: uuid.UUID) -> List[Any]:
+    async def get_ratings_for_recipe(self, recipe_id: UUID) -> List[Any]:
         # Placeholder: return would be List[RecipeRatingPublic]
         print(f"RecipeService: get_ratings_for_recipe called for recipe_id: {recipe_id}")
         raise NotImplementedError("RecipeService: get_ratings_for_recipe not implemented")
+
+    async def _get_or_create_ingredient(self, name: str, category: Optional[str] = "Unknown") -> DBIngredient:
+        normalized_name = name.strip().lower()
+        stmt = select(DBIngredient).where(func.lower(DBIngredient.name) == normalized_name)
+        existing_ingredient = self.db.execute(stmt).scalars().first()
+        if existing_ingredient:
+            return existing_ingredient
+        else:
+            new_ingredient = DBIngredient(name=name.strip(), category=category)
+            self.db.add(new_ingredient)
+            try:
+                self.db.commit()
+                self.db.refresh(new_ingredient)
+                return new_ingredient
+            except Exception as e:
+                self.db.rollback()
+                stmt_retry = select(DBIngredient).where(func.lower(DBIngredient.name) == normalized_name)
+                existing_ingredient_retry = self.db.execute(stmt_retry).scalars().first()
+                if existing_ingredient_retry:
+                    return existing_ingredient_retry
+                logger.error(f"Error creating ingredient '{name}': {e}")
+                raise
+
+    async def search_external_recipes(
+        self, query: str, page: int = 1, limit: int = 10
+    ) -> Dict[str, Any]:
+        client = None
+        try:
+            client = SpoonacularClient()
+            offset = (page - 1) * limit
+            spoonacular_response = await client.search_recipes(
+                query=query, offset=offset, number=limit,
+                add_recipe_information=True, fill_ingredients=False
+            )
+        except SpoonacularRateLimitException as e:
+            logger.error(f"Spoonacular API rate limit during search: {e}")
+            raise
+        except SpoonacularException as e:
+            logger.error(f"Spoonacular API error during search: {e}")
+            raise
+        except ValueError as e: # Catches API key configuration errors from SpoonacularClient init
+            logger.error(f"SpoonacularClient config error: {e}")
+            # Re-raise as a more generic exception or a custom one if defined for service layer
+            raise Exception(f"Spoonacular client configuration error: {e}") from e
+        finally:
+            if client:
+                await client.close()
+
+        results = spoonacular_response.get("results", [])
+        total_items = spoonacular_response.get("totalResults", 0)
+
+        search_results_public = []
+        for res in results:
+            search_results_public.append({
+                "spoonacular_id": res.get("id"),
+                "title": res.get("title"),
+                "image_url": res.get("image"),
+                "source_url": res.get("sourceUrl"), # Spoonacular uses sourceUrl
+                "ready_in_minutes": res.get("readyInMinutes"),
+                "servings": res.get("servings")
+            })
+
+        total_pages = math.ceil(total_items / limit) if limit > 0 else 0
+        pagination_meta = {
+            "currentPage": page,
+            "totalPages": total_pages,
+            "totalItems": total_items,
+            "hasNext": page < total_pages,
+            "hasPrevious": page > 1,
+            "itemsPerPage": limit,
+            "externalSource": "Spoonacular" # Added to indicate the source
+        }
+        return {"results": search_results_public, "pagination": pagination_meta}
+
+    async def import_recipe_from_spoonacular(self, spoonacular_id: int, user_id: UUID) -> RecipePublic:
+        # Check if recipe already exists by spoonacular_id
+        stmt_check = select(DBRecipe).where(DBRecipe.spoonacular_id == spoonacular_id)
+        existing_recipe = self.db.execute(stmt_check).scalars().first()
+        if existing_recipe:
+            logger.info(f"Recipe with Spoonacular ID {spoonacular_id} (local ID {existing_recipe.id}) already exists.")
+            # Return existing recipe, ensuring it's the full public model
+            return await self.get_recipe_by_id(existing_recipe.id, user_id=user_id)
+
+        client = None
+        try:
+            client = SpoonacularClient()
+            spoonacular_recipe_data = await client.get_recipe_details(spoonacular_id, include_nutrition=False)
+        except SpoonacularRateLimitException as e:
+            logger.error(f"Spoonacular API rate limit for recipe {spoonacular_id}: {e}")
+            raise
+        except SpoonacularException as e:
+            logger.error(f"Spoonacular API error for recipe {spoonacular_id}: {e}")
+            raise
+        except ValueError as e: # Catches API key configuration errors
+            logger.error(f"SpoonacularClient config error: {e}")
+            raise Exception(f"Spoonacular client configuration error: {e}") from e
+        finally:
+            if client:
+                await client.close()
+
+        try:
+            # Map Spoonacular data to a structure suitable for RecipeCreate
+            mapped_data = map_spoonacular_data_to_dict(spoonacular_recipe_data, spoonacular_id)
+        except ValueError as e: # Catch specific mapping errors
+            logger.error(f"Mapping error for Spoonacular recipe {spoonacular_id}: {e}")
+            raise Exception(f"Error processing recipe data: {e}") from e
+
+        # Ensure ingredients are present after mapping
+        if not mapped_data.get("ingredients_data_temp"):
+            # This might indicate an issue with the source data or mapping logic for this specific recipe
+            logger.warning(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No ingredients were mapped.")
+            # Depending on policy, you might raise an error or proceed without ingredients
+            raise ValueError(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No ingredients mapped.")
+
+        # Process ingredients: get or create local DBIngredient, then prepare RecipeIngredientLinkCreate
+        recipe_ingredient_links_create: List[RecipeIngredientLinkCreate] = []
+        for ing_data in mapped_data["ingredients_data_temp"]:
+            try:
+                ingredient_db_obj = await self._get_or_create_ingredient(name=ing_data["name"])
+                recipe_ingredient_links_create.append(
+                    RecipeIngredientLinkCreate(
+                        ingredient_id=ingredient_db_obj.id, # Use the ID from the DB object
+                        quantity=ing_data["quantity"],
+                        unit=ing_data["unit"],
+                        preparation_note=ing_data.get("preparation_note") # Ensure this is optional
+                    )
+                )
+            except Exception as e:
+                # Log and re-raise or collect errors to decide if recipe import should fail
+                logger.error(f"Failed to process or link ingredient '{ing_data['name']}' for Spoonacular recipe {spoonacular_id}: {e}")
+                raise Exception(f"Error processing ingredient {ing_data['name']}: {e}") from e
+
+        # If after processing, no ingredients are successfully linked (e.g., all had issues)
+        if not recipe_ingredient_links_create:
+             logger.warning(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No ingredients successfully processed/linked.")
+             raise ValueError(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No ingredients could be successfully processed.")
+
+        # Ensure instructions are present
+        if not mapped_data.get("instructions_data"):
+            logger.warning(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No instructions were mapped.")
+            raise ValueError(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No instructions mapped.")
+
+        instructions_create_list: List[InstructionStepCreate] = []
+        for instr_data in mapped_data["instructions_data"]:
+            instructions_create_list.append(InstructionStepCreate(**instr_data))
+
+        if not instructions_create_list: # Should not happen if mapped_data["instructions_data"] was not empty
+             logger.warning(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No instructions successfully processed into Pydantic models.")
+             raise ValueError(f"Recipe {spoonacular_id} ('{mapped_data.get('title')}'): No instructions could be successfully processed.")
+
+        # Create the recipe using the existing service method
+        try:
+            recipe_to_create = RecipeCreate(
+                title=mapped_data["title"], # title is mandatory from mapper
+                description=mapped_data.get("description"),
+                prep_time_minutes=mapped_data.get("prep_time_minutes"),
+                cook_time_minutes=mapped_data.get("cook_time_minutes"),
+                servings=mapped_data.get("servings"),
+                difficulty_level=mapped_data.get("difficulty_level", "medium"), # Default if not provided
+                cuisine_type=mapped_data.get("cuisine_type"),
+                dietary_tags=mapped_data.get("dietary_tags", []), # Default to empty list
+                image_url=mapped_data.get("image_url"),
+                source_url=mapped_data.get("source_url"),
+                spoonacular_id=mapped_data["spoonacular_id"], # This is now part of RecipeBase and thus RecipeCreate
+                instructions=instructions_create_list,
+                ingredients=recipe_ingredient_links_create
+            )
+        except Exception as e: # Catch Pydantic validation errors or other issues
+            logger.error(f"Pydantic validation error for creating RecipeCreate from Spoonacular recipe {spoonacular_id} data: {e}")
+            raise Exception(f"Data validation failed for recipe {spoonacular_id}: {e}") from e
+
+        # Use the existing create_recipe method
+        try:
+            # Pass user_id to create_recipe
+            created_recipe_public = await self.create_recipe(recipe_in=recipe_to_create, user_id=user_id)
+            logger.info(f"Successfully imported Spoonacular recipe {spoonacular_id} as local recipe ID {created_recipe_public.id}")
+            return created_recipe_public
+        except Exception as e:
+            # Handle potential errors during recipe creation (e.g., DB issues)
+            logger.error(f"Database error while saving imported Spoonacular recipe {spoonacular_id} (local title '{recipe_to_create.title}'): {e}")
+            self.db.rollback() # Ensure rollback on error
+            # Re-raise to inform the caller; specific error handling might be needed based on application flow
+            raise Exception(f"Database error saving recipe {spoonacular_id}: {e}") from e

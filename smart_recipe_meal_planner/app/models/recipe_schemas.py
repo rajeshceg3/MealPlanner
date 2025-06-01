@@ -43,6 +43,7 @@ class RecipeBase(OrmBaseModel):
     dietary_tags: Optional[List[str]] = []
     image_url: Optional[HttpUrl] = None
     source_url: Optional[HttpUrl] = None
+    spoonacular_id: Optional[int] = Field(None, description="Spoonacular recipe ID, if imported from Spoonacular.")
 
 class RecipeCreate(RecipeBase):
     instructions: List[InstructionStepCreate] = Field(..., min_length=1)
