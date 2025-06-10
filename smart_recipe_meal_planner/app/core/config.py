@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     EDAMAM_APP_KEY: str = "your_edamam_app_key"
 
     # CORS Origins
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"] # Example for frontend dev
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"] # Example for frontend dev
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
