@@ -1,55 +1,235 @@
-/* Basic styles for RecipeList component */
+/* Enhanced styles for RecipeList component */
 
 .recipe-list-container {
-  padding: 20px;
+  /* Padding is handled by App.css's #root or main if needed */
 }
 
 .recipe-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
-  gap: 20px; /* Space between cards */
-  list-style-type: none; /* Remove default list bullets */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Cards can be a bit wider */
+  gap: 1.5rem; /* More visual separation between cards */
+  list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
 .recipe-item {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  background-color: #f9f9f9;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out;
+  background-color: #fff; /* White background for cards */
+  border: 1px solid #e0e0e0; /* Softer border */
+  border-radius: 12px; /* More pronounced rounded corners */
+  padding: 1.5rem; /* Generous padding inside cards */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Softer, more modern shadow */
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column; /* Stack content vertically */
 }
 
 .recipe-item:hover {
-  transform: translateY(-5px);
+  transform: translateY(-6px); /* Slightly more lift on hover */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); /* Deeper shadow on hover */
 }
 
-.recipe-item h2 {
-  font-size: 1.5em;
+.recipe-item h2 { /* Recipe Title */
+  font-size: 1.75rem; /* Larger, more prominent title */
+  font-weight: 600; /* Bolder */
   margin-top: 0;
-  margin-bottom: 10px;
-  color: #333;
+  margin-bottom: 1rem;
+  color: #2c3e50; /* Darker, more saturated title color */
 }
 
-.recipe-item p {
-  font-size: 1em;
-  line-height: 1.6;
+.recipe-item p { /* General paragraph text within item */
+  font-size: 1rem;
+  line-height: 1.65;
   color: #555;
-  margin-bottom: 8px;
+  margin-bottom: 1rem;
+  flex-grow: 1; /* Allow description/instructions to take available space */
 }
 
-.recipe-item .details {
-  font-size: 0.9em;
-  color: #777;
+.recipe-item .details { /* Container for prep time, servings */
+  font-size: 0.9rem;
+  color: #6c757d; /* Softer color for less emphasis */
+  margin-top: auto; /* Pushes to the bottom of the card */
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0; /* Very subtle separator */
+}
+.recipe-item .details p {
+  margin-bottom: 0.3rem; /* Tighter spacing for detail lines */
 }
 
 .loading-message,
 .error-message,
 .no-recipes-message {
+  /* Can inherit from .message-text in App.css or be styled specifically here */
   text-align: center;
-  padding: 20px;
-  font-size: 1.2em;
+  padding: 2rem 1rem; /* More vertical padding */
+  font-size: 1.25em; /* Slightly larger */
   color: #555;
+  margin: 2rem auto; /* Centered with margin */
+}
+
+/* Image Placeholder, Ingredients, Instructions Sections */
+.recipe-image-placeholder {
+  width: calc(100% + 3rem); /* Span full width of padded card */
+  margin: -1.5rem -1.5rem 1.5rem -1.5rem; /* Negative margins to counter padding */
+  height: 220px; /* Slightly taller */
+  background-color: #e9ecef; /* Light placeholder color */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-style: italic;
+  border-top-left-radius: 12px; /* Match card's top radius */
+  border-top-right-radius: 12px; /* Match card's top radius */
+  font-size: 1rem;
+}
+
+.ingredients-section,
+.instructions-section {
+  margin-top: 1rem;
+  margin-bottom: 1rem; /* Consistent bottom margin */
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0; /* Subtle separator */
+}
+
+.ingredients-section h3,
+.instructions-section h3 {
+  font-size: 1.4rem; /* Clearer section headings */
+  font-weight: 500; /* Medium weight */
+  color: #4DB6AC; /* Accent color from App.css */
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.ingredients-list {
+  list-style-type: none; /* Custom bullets will be used */
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.ingredient-item {
+  font-size: 0.95rem;
+  color: #495057; /* Good readability */
+  margin-bottom: 0.6rem; /* Slightly more space between items */
+  padding-left: 1.75em; /* Space for custom bullet */
+  position: relative;
+  line-height: 1.5;
+}
+
+.ingredient-item::before {
+  content: "•"; /* Simple, elegant bullet */
+  position: absolute;
+  left: 0.5em; /* Positioned nicely */
+  color: #4DB6AC; /* Accent color */
+  font-weight: bold;
+  font-size: 1em;
+  line-height: inherit; /* Align with text line */
+}
+
+.instructions-section p {
+  font-size: 1rem;
+  line-height: 1.75; /* More spacing for readability of instructions */
+  color: #343a40; /* Dark text for instructions */
+}
+
+/* Filter Controls Area */
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap; /* Allow items to wrap to next line */
+  gap: 1rem; /* Spacing between control items */
+  margin-bottom: 2.5rem; /* More space below controls */
+  padding: 1.25rem 1.5rem; /* Comfortable padding */
+  background-color: #fff;
+  border-radius: 12px; /* Match card styling */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Consistent shadow style */
+  align-items: center; /* Vertically align items */
+}
+
+.filter-controls input,
+.filter-controls select {
+  padding: 0.75rem 1rem; /* Comfortable padding */
+  border: 1px solid #d1d5db; /* Clear but not harsh border */
+  border-radius: 8px; /* Rounded edges for inputs */
+  font-size: 1rem;
+  background-color: #fff;
+  height: 48px; /* Taller inputs for easier interaction */
+  box-sizing: border-box;
+  line-height: 1.5; /* Ensure text is centered vertically */
+}
+
+/* Specific input styling */
+.filter-controls .search-input {
+  flex: 2 1 280px; /* Allow to grow more, slightly larger basis */
+}
+
+.filter-controls .prep-time-input {
+  flex: 1 1 200px;
+}
+/* Hide spinner buttons on number input for a cleaner look */
+.filter-controls .prep-time-input::-webkit-inner-spin-button,
+.filter-controls .prep-time-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.filter-controls .prep-time-input {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.filter-controls .sort-select {
+  flex: 1 1 220px; /* Slightly wider basis for select */
+}
+
+/* Responsive adjustments for filter controls */
+@media (max-width: 768px) {
+  .filter-controls {
+    flex-direction: column; /* Stack controls vertically */
+    padding: 1rem; /* Adjust padding for stacked layout */
+  }
+  .filter-controls input,
+  .filter-controls select {
+    width: 100%; /* Full width for stacked inputs */
+    min-width: 0; /* Reset min-width */
+    flex-basis: auto; /* Reset flex-basis */
+  }
+}
+
+/* Pagination Controls Styles */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 0; /* Padding above and below controls */
+  margin-top: 2rem; /* Space above pagination */
+}
+
+.pagination-button {
+  background-color: #4DB6AC; /* Accent color */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem; /* Generous padding */
+  margin: 0 0.5rem; /* Space around buttons */
+  border-radius: 8px; /* Rounded corners */
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #3aa396; /* Darker shade on hover */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.pagination-button:disabled {
+  background-color: #c0c0c0; /* Grey out disabled buttons */
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.page-info {
+  font-size: 1rem;
+  color: #333;
+  margin: 0 1rem; /* Space around page info text */
+  font-weight: 500;
 }
