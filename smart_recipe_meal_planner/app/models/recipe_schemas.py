@@ -80,6 +80,19 @@ class PaginatedRecipeResponse(OrmBaseModel):
     data: List[RecipePublic]
     pagination: dict # E.g. {"currentPage": 1, "totalPages": 10, "totalItems": 100, "hasNext": true, "hasPrevious": false}
 
+class ExternalRecipeSearchResultItem(BaseModel):
+    spoonacular_id: int
+    title: str
+    image_url: Optional[HttpUrl] = None
+    source_url: Optional[HttpUrl] = None
+    ready_in_minutes: Optional[int] = None
+    servings: Optional[int] = None
+
+class PaginatedExternalRecipeSearchResponse(BaseModel):
+    success: bool = True
+    data: List[ExternalRecipeSearchResultItem]
+    pagination: dict # E.g. {"currentPage": 1, "totalPages": 10, "totalItems": 100, "hasNext": true, "hasPrevious": false}
+
 class RecipeDetailResponse(OrmBaseModel):
     success: bool = True
     data: RecipePublic
