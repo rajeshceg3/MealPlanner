@@ -1,8 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from uuid import UUID
 
-from app.models.recipe_schemas import RecipeCreate, RecipePublic, PaginatedRecipeResponse, RecipeUpdate
+from app.models.recipe_schemas import (
+    RecipeCreate,
+    RecipePublic,
+    PaginatedRecipeResponse,
+    RecipeUpdate,
+    PaginatedExternalRecipeSearchResponse, # Added import
+)
 from app.services.recipe_service import RecipeService
+# Corrected import path for Spoonacular exceptions
+from app.clients.spoonacular_client import SpoonacularRateLimitException, SpoonacularException
 from app.api.v1.dependencies import get_recipe_service, get_current_active_user
 from app.db.models.user_model import User as DBUser
 
@@ -161,3 +169,55 @@ async def delete_recipe_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while deleting the recipe.",
         ) from e
+
+
+@router.get("/search-external", response_model=PaginatedExternalRecipeSearchResponse, summary="Search Recipes from External Source (Spoonacular)", description="Searches for recipes on Spoonacular based on a query string. Requires authentication.")
+async def search_external_recipes(
+    query: str = Query(..., min_length=3, description="Search query for recipes"),
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    limit: int = Query(10, ge=1, le=30, description="Number of results per page"),
+    recipe_service: RecipeService = Depends(get_recipe_service),
+    current_user: DBUser = Depends(get_current_active_user), # Added dependency
+):
+    """
+    Search recipes from Spoonacular.
+    """
+    try:
+        results = await recipe_service.search_external_recipes(query=query, page=page, limit=limit)
+        # The service returns a dict with 'results' and 'pagination' keys
+        # which maps to 'data' and 'pagination' in PaginatedExternalRecipeSearchResponse
+        return PaginatedExternalRecipeSearchResponse(data=results.get("results", []), pagination=results.get("pagination", {}))
+    except SpoonacularRateLimitException as e:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+    except SpoonacularException as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    except Exception as e:
+        # Log the exception e for debugging
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred while searching external recipes.")
+
+
+@router.post("/import-external/{spoonacular_id}", response_model=RecipePublic, status_code=status.HTTP_200_OK, summary="Import Recipe from External Source (Spoonacular)", description="Imports a recipe from Spoonacular using its ID and saves it to the local database. If the recipe already exists locally (based on Spoonacular ID), it returns the existing local recipe. Requires authentication.")
+async def import_external_recipe(
+    spoonacular_id: int = Path(..., ge=1, description="Spoonacular recipe ID"),
+    recipe_service: RecipeService = Depends(get_recipe_service),
+    current_user: DBUser = Depends(get_current_active_user),
+):
+    """
+    Import a recipe from Spoonacular by its ID.
+    """
+    try:
+        recipe = await recipe_service.import_recipe_from_spoonacular(
+            spoonacular_id=spoonacular_id, user_id=current_user.id
+        )
+        # The service method is expected to return a RecipePublic object (new or existing)
+        # or raise an exception.
+        return recipe
+    except SpoonacularRateLimitException as e:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+    except SpoonacularException as e: # Covers issues like recipe not found on Spoonacular or API errors
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    except ValueError as e: # For data mapping issues or if recipe structure is not as expected
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except Exception as e:
+        # Log the exception e for debugging
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred while importing the recipe.")
