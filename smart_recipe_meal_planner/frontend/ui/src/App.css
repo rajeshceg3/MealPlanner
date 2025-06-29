@@ -4,46 +4,65 @@ body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa; /* Light gray background */
-  color: #333; /* Default text color */
-  line-height: 1.6;
+  background-color: #f4f7f6; /* Soft, slightly cool background - Fallback */
+  background: linear-gradient(-45deg, #e8f0ee, #f4f7f6, #e6f2f0, #f0f5f4); /* Animated gradient */
+  background-size: 400% 400%;
+  animation: subtleGradient 25s ease infinite;
+  color: #37474F; /* Blue Grey 900 for primary text */
+  line-height: 1.7;
+}
+
+@keyframes subtleGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 #root {
-  max-width: 1280px; /* Max width for content */
+  max-width: 1320px; /* Slightly wider */
   margin: 0 auto; /* Center content */
-  padding: 0 1rem; /* Horizontal padding, header/main will handle vertical */
+  padding: 0 1.5rem; /* More horizontal padding */
   /* text-align: center; /* Removed, will set on specific elements if needed */
 }
 
 /* App Header Styles */
 header {
-  background-color: #4DB6AC; /* Muted Teal */
+  background-color: #4DB6AC; /* Muted Teal - Fallback */
+  background-image: linear-gradient(to right, #4DB6AC, #40968c); /* Subtle gradient */
   color: white;
-  padding: 1.5rem 1rem; /* Vertical and horizontal padding */
-  margin-bottom: 2rem; /* Space below header */
+  padding: 2rem 1.5rem; /* Adjusted padding */
+  margin-bottom: 2.5rem; /* Adjusted margin */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   text-align: center; /* Center header text */
 }
 
 header h1 {
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.2rem; /* Adjusted font size */
+  font-weight: 700; /* Adjusted font weight */
+  letter-spacing: -0.5px; /* Added letter spacing */
 }
 
 /* Main Content Area */
 main {
-  padding: 0 0 2rem 0; /* Padding for bottom of main content */
+  padding-bottom: 3rem; /* More space at the bottom */
 }
 
 /* Basic Link Styling (if any links are added later) */
 a {
-  color: #4DB6AC;
+  color: #4DB6AC; /* Primary theme color for links */
   text-decoration: none;
+  transition: color 0.2s ease-in-out;
 }
 
 a:hover {
+  color: #3aa396; /* Darker variant on hover */
   text-decoration: underline;
 }
 
@@ -58,4 +77,39 @@ a:hover {
 /* Remove default Vite demo styles if they are not used by other components */
 .logo, .logo.react, .card, .read-the-docs {
   display: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  header h1 {
+    font-size: 1.8rem;
+  }
+  header {
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  #root {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.5rem;
+  }
+  /* Styles for .recipe-list-container h1 will be in RecipeList.css for component encapsulation */
+}
+
+/* Accessibility - Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none; /* Disable background animation */
+  }
+  /* Reduce motion for other elements if defined here or in component CSS */
+  /* Example:
+  .loading-message { animation: none; }
+  .recipe-item, .pagination-button {
+    transition-duration: 0.01ms !important;
+  }
+  */
 }

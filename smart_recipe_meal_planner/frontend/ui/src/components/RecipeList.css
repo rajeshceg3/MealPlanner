@@ -4,9 +4,16 @@
   /* Padding is handled by App.css's #root or main if needed */
 }
 
+.recipe-list-container h1 {
+  font-size: 2.5rem; /* Or adjust based on global h1/h2 scale */
+  color: #37474F; /* Primary text color from App.css */
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
 .recipe-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Cards can be a bit wider */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted min for smaller screens */
   gap: 1.5rem; /* More visual separation between cards */
   list-style-type: none;
   padding: 0;
@@ -19,37 +26,37 @@
   border-radius: 12px; /* More pronounced rounded corners */
   padding: 1.5rem; /* Generous padding inside cards */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Softer, more modern shadow */
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, opacity 0.4s ease-in-out;
   display: flex;
   flex-direction: column; /* Stack content vertically */
 }
 
 .recipe-item:hover {
-  transform: translateY(-6px); /* Slightly more lift on hover */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); /* Deeper shadow on hover */
+  transform: translateY(-10px); /* Slightly more lift on hover */
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); /* Deeper shadow on hover */
 }
 
 .recipe-item h2 { /* Recipe Title */
-  font-size: 1.75rem; /* Larger, more prominent title */
+  font-size: 1.85rem; /* Larger, more prominent title */
   font-weight: 600; /* Bolder */
   margin-top: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
   color: #2c3e50; /* Darker, more saturated title color */
 }
 
 .recipe-item p { /* General paragraph text within item */
-  font-size: 1rem;
-  line-height: 1.65;
-  color: #555;
-  margin-bottom: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #546E7A; /* Adjusted for new theme */
+  margin-bottom: 1.2rem;
   flex-grow: 1; /* Allow description/instructions to take available space */
 }
 
 .recipe-item .details { /* Container for prep time, servings */
-  font-size: 0.9rem;
-  color: #6c757d; /* Softer color for less emphasis */
+  font-size: 0.95rem;
+  color: #78909C; /* Adjusted for new theme */
   margin-top: auto; /* Pushes to the bottom of the card */
-  padding-top: 1rem;
+  padding-top: 1.2rem;
   border-top: 1px solid #f0f0f0; /* Very subtle separator */
 }
 .recipe-item .details p {
@@ -61,10 +68,21 @@
 .no-recipes-message {
   /* Can inherit from .message-text in App.css or be styled specifically here */
   text-align: center;
-  padding: 2rem 1rem; /* More vertical padding */
-  font-size: 1.25em; /* Slightly larger */
-  color: #555;
+  padding: 3rem 1rem; /* More vertical padding */
+  font-size: 1.5em; /* Slightly larger */
+  color: #4DB6AC; /* Theme color */
   margin: 2rem auto; /* Centered with margin */
+  font-weight: 500;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 /* Image Placeholder, Ingredients, Instructions Sections */
@@ -72,15 +90,16 @@
   width: calc(100% + 3rem); /* Span full width of padded card */
   margin: -1.5rem -1.5rem 1.5rem -1.5rem; /* Negative margins to counter padding */
   height: 220px; /* Slightly taller */
-  background-color: #e9ecef; /* Light placeholder color */
+  background-color: #d8e2fc; /* A soft, inviting blue */
+  border: 2px dashed #b6c1e8; /* A dashed border can look more "placeholder-y" */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c757d;
-  font-style: italic;
+  color: #5a67d8;
+  font-weight: 500;
   border-top-left-radius: 12px; /* Match card's top radius */
   border-top-right-radius: 12px; /* Match card's top radius */
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .ingredients-section,
@@ -93,11 +112,11 @@
 
 .ingredients-section h3,
 .instructions-section h3 {
-  font-size: 1.4rem; /* Clearer section headings */
+  font-size: 1.5rem; /* Clearer section headings */
   font-weight: 500; /* Medium weight */
   color: #4DB6AC; /* Accent color from App.css */
   margin-top: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .ingredients-list {
@@ -107,9 +126,9 @@
 }
 
 .ingredient-item {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #495057; /* Good readability */
-  margin-bottom: 0.6rem; /* Slightly more space between items */
+  margin-bottom: 0.7rem; /* Slightly more space between items */
   padding-left: 1.75em; /* Space for custom bullet */
   position: relative;
   line-height: 1.5;
@@ -126,8 +145,8 @@
 }
 
 .instructions-section p {
-  font-size: 1rem;
-  line-height: 1.75; /* More spacing for readability of instructions */
+  font-size: 1.05rem;
+  line-height: 1.8; /* More spacing for readability of instructions */
   color: #343a40; /* Dark text for instructions */
 }
 
@@ -135,26 +154,47 @@
 .filter-controls {
   display: flex;
   flex-wrap: wrap; /* Allow items to wrap to next line */
-  gap: 1rem; /* Spacing between control items */
+  gap: 1.5rem; /* Spacing between control items */
   margin-bottom: 2.5rem; /* More space below controls */
-  padding: 1.25rem 1.5rem; /* Comfortable padding */
-  background-color: #fff;
+  padding: 1.5rem 2rem; /* Comfortable padding */
+  background-color: #fff; /* Or #f7f9fc for a very light grey */
   border-radius: 12px; /* Match card styling */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Consistent shadow style */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07); /* Consistent shadow style */
   align-items: center; /* Vertically align items */
 }
 
 .filter-controls input,
 .filter-controls select {
-  padding: 0.75rem 1rem; /* Comfortable padding */
-  border: 1px solid #d1d5db; /* Clear but not harsh border */
-  border-radius: 8px; /* Rounded edges for inputs */
-  font-size: 1rem;
+  padding: 0.8rem 1.2rem; /* Comfortable padding */
+  border: 1px solid #bcccdc; /* Clear but not harsh border */
+  border-radius: 10px; /* Rounded edges for inputs */
+  font-size: 1.05rem;
   background-color: #fff;
-  height: 48px; /* Taller inputs for easier interaction */
+  height: 52px; /* Taller inputs for easier interaction */
   box-sizing: border-box;
   line-height: 1.5; /* Ensure text is centered vertically */
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* For focus transition */
 }
+
+.filter-controls input:focus,
+.filter-controls select:focus {
+  border-color: #4DB6AC; /* Primary theme color */
+  box-shadow: 0 0 0 3px rgba(77, 182, 172, 0.2); /* Subtle focus ring */
+  outline: none; /* Remove default outline */
+}
+
+/* Placeholder text styling */
+.filter-controls input::placeholder {
+  color: #8899aa;
+  opacity: 1; /* Firefox */
+}
+.filter-controls input:-ms-input-placeholder { /* Edge */
+  color: #8899aa;
+}
+.filter-controls input::-ms-input-placeholder { /* IE */
+  color: #8899aa;
+}
+
 
 /* Specific input styling */
 .filter-controls .search-input {
@@ -176,6 +216,14 @@
 
 .filter-controls .sort-select {
   flex: 1 1 220px; /* Slightly wider basis for select */
+  appearance: none; /* Remove default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207.5l5%205%205-5%22%20stroke%3D%22%234DB6AC%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E');
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
+  padding-right: 3rem; /* Make space for the custom arrow, increased from 2.5rem for comfort */
 }
 
 /* Responsive adjustments for filter controls */
@@ -211,13 +259,18 @@
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.1s ease-in-out;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .pagination-button:hover:not(:disabled) {
   background-color: #3aa396; /* Darker shade on hover */
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.pagination-button:active:not(:disabled) {
+  transform: translateY(2px); /* Slight press down effect */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Smaller shadow when pressed */
 }
 
 .pagination-button:disabled {
@@ -232,4 +285,28 @@
   color: #333;
   margin: 0 1rem; /* Space around page info text */
   font-weight: 500;
+}
+
+/* Responsive adjustment for very small screens */
+@media (max-width: 480px) {
+  .recipe-list-container h1 {
+    font-size: 2rem;
+  }
+}
+
+/* Accessibility - Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .loading-message {
+    animation: none; /* Disable pulse on loading message */
+  }
+  .recipe-item,
+  .pagination-button {
+    /* Effectively disable transitions by making them super fast */
+    transition-duration: 0.01ms !important;
+    /* Disable specific transform animations if any were added beyond transitions */
+    /* animation: none !important; */ /* Example if there were keyframe animations */
+  }
+  .recipe-item:hover {
+    transform: none; /* Disable hover lift if it's too much */
+  }
 }

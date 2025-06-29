@@ -144,7 +144,7 @@ const RecipeList = () => {
         {currentRecipesToDisplay.map((recipe) => (
           <li key={recipe.id} className="recipe-item">
             <h2>{recipe.title}</h2>
-            <div className="recipe-image-placeholder">Image Placeholder</div> {/* Image Placeholder */}
+            <div className="recipe-image-placeholder">Beautiful recipe image coming soon!</div> {/* Image Placeholder */}
             <p>{recipe.description || 'No description available.'}</p>
 
             {recipe.ingredients && recipe.ingredients.length > 0 && (
