@@ -4,258 +4,399 @@
   /* Padding is handled by App.css's #root or main if needed */
 }
 
-.recipe-list-container h1 {
-  font-size: 2.5rem; /* Or adjust based on global h1/h2 scale */
-  color: #37474F; /* Primary text color from App.css */
+.recipe-list-container h1 { /* Main page title "Recipe List" */
+  font-size: 2.5rem;
+  color: #37474F;
   margin-bottom: 2rem;
   text-align: center;
 }
 
+/* General section titles (like "External Recipe Search Results", "My Saved Recipes") */
+.recipe-list-container h2,
+.section-title { /* .section-title is for "My Saved Recipes" H2 */
+  font-size: 2rem; /* Slightly smaller than main H1 */
+  color: #4A5568; /* A softer, more modern dark grey */
+  margin-top: 2.5rem; /* Space above section titles */
+  margin-bottom: 1.5rem; /* Space below section titles */
+  padding-bottom: 0.5rem; /* Small line/space under title */
+  border-bottom: 2px solid #E2E8F0; /* Subtle separator line */
+}
+
 .recipe-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted min for smaller screens */
-  gap: 1.5rem; /* More visual separation between cards */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
   list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
-.recipe-item {
-  background-color: #fff; /* White background for cards */
-  border: 1px solid #e0e0e0; /* Softer border */
-  border-radius: 12px; /* More pronounced rounded corners */
-  padding: 1.5rem; /* Generous padding inside cards */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Softer, more modern shadow */
+.recipe-item { /* For locally saved recipes */
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, opacity 0.4s ease-in-out;
   display: flex;
-  flex-direction: column; /* Stack content vertically */
+  flex-direction: column;
 }
 
 .recipe-item:hover {
-  transform: translateY(-10px); /* Slightly more lift on hover */
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); /* Deeper shadow on hover */
+  transform: translateY(-10px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
-.recipe-item h2 { /* Recipe Title */
-  font-size: 1.85rem; /* Larger, more prominent title */
-  font-weight: 600; /* Bolder */
+.recipe-item h2, .recipe-item h3 { /* Title within a local recipe card */
+  font-size: 1.85rem;
+  font-weight: 600;
   margin-top: 0;
   margin-bottom: 1.2rem;
-  color: #2c3e50; /* Darker, more saturated title color */
+  color: #2c3e50;
+}
+.external-recipe-item h3 { /* Title within an external recipe card */
+  font-size: 1.5rem; /* Slightly smaller for external items if needed */
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
 }
 
-.recipe-item p { /* General paragraph text within item */
+
+.recipe-item p {
   font-size: 1.05rem;
   line-height: 1.7;
-  color: #546E7A; /* Adjusted for new theme */
+  color: #546E7A;
   margin-bottom: 1.2rem;
-  flex-grow: 1; /* Allow description/instructions to take available space */
+  flex-grow: 1;
 }
 
-.recipe-item .details { /* Container for prep time, servings */
+.recipe-item .details {
   font-size: 0.95rem;
-  color: #78909C; /* Adjusted for new theme */
-  margin-top: auto; /* Pushes to the bottom of the card */
+  color: #78909C;
+  margin-top: auto;
   padding-top: 1.2rem;
-  border-top: 1px solid #f0f0f0; /* Very subtle separator */
+  border-top: 1px solid #f0f0f0;
 }
 .recipe-item .details p {
-  margin-bottom: 0.3rem; /* Tighter spacing for detail lines */
+  margin-bottom: 0.3rem;
 }
 
+/* General Message Styles */
 .loading-message,
 .error-message,
-.no-recipes-message {
-  /* Can inherit from .message-text in App.css or be styled specifically here */
+.no-recipes-message,
+.info-message {
   text-align: center;
-  padding: 3rem 1rem; /* More vertical padding */
-  font-size: 1.5em; /* Slightly larger */
-  color: #4DB6AC; /* Theme color */
-  margin: 2rem auto; /* Centered with margin */
+  padding: 2rem 1rem; /* Reduced padding from 3rem */
+  font-size: 1.2em; /* Reduced from 1.5em */
+  color: #5A67D8; /* A more neutral info blue */
+  margin: 1.5rem auto;
   font-weight: 500;
+}
+.loading-message {
   animation: pulse 1.5s infinite ease-in-out;
+}
+.error-message {
+  color: #E53E3E; /* Red for errors */
+  background-color: #FFF5F5; /* Light red background */
+  border: 1px solid #FC8181; /* Red border */
+  border-radius: 8px;
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
-/* Image Placeholder, Ingredients, Instructions Sections */
+/* Image Placeholder, Ingredients, Instructions Sections for LOCAL RECIPES */
 .recipe-image-placeholder {
-  width: calc(100% + 3rem); /* Span full width of padded card */
-  margin: -1.5rem -1.5rem 1.5rem -1.5rem; /* Negative margins to counter padding */
-  height: 220px; /* Slightly taller */
-  background-color: #d8e2fc; /* A soft, inviting blue */
-  border: 2px dashed #b6c1e8; /* A dashed border can look more "placeholder-y" */
+  width: calc(100% + 3rem);
+  margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+  height: 220px;
+  background-color: #d8e2fc;
+  border: 2px dashed #b6c1e8;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #5a67d8;
   font-weight: 500;
-  border-top-left-radius: 12px; /* Match card's top radius */
-  border-top-right-radius: 12px; /* Match card's top radius */
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
   font-size: 1.1rem;
 }
 
 .ingredients-section,
 .instructions-section {
   margin-top: 1rem;
-  margin-bottom: 1rem; /* Consistent bottom margin */
+  margin-bottom: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #f0f0f0; /* Subtle separator */
+  border-top: 1px solid #f0f0f0;
 }
 
 .ingredients-section h3,
 .instructions-section h3 {
-  font-size: 1.5rem; /* Clearer section headings */
-  font-weight: 500; /* Medium weight */
-  color: #4DB6AC; /* Accent color from App.css */
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #4DB6AC;
   margin-top: 0;
   margin-bottom: 0.8rem;
 }
 
 .ingredients-list {
-  list-style-type: none; /* Custom bullets will be used */
+  list-style-type: none;
   padding-left: 0;
   margin-bottom: 0;
 }
 
 .ingredient-item {
   font-size: 1rem;
-  color: #495057; /* Good readability */
-  margin-bottom: 0.7rem; /* Slightly more space between items */
-  padding-left: 1.75em; /* Space for custom bullet */
+  color: #495057;
+  margin-bottom: 0.7rem;
+  padding-left: 1.75em;
   position: relative;
   line-height: 1.5;
 }
 
 .ingredient-item::before {
-  content: "•"; /* Simple, elegant bullet */
+  content: "•";
   position: absolute;
-  left: 0.5em; /* Positioned nicely */
-  color: #4DB6AC; /* Accent color */
+  left: 0.5em;
+  color: #4DB6AC;
   font-weight: bold;
   font-size: 1em;
-  line-height: inherit; /* Align with text line */
+  line-height: inherit;
 }
 
 .instructions-section p {
   font-size: 1.05rem;
-  line-height: 1.8; /* More spacing for readability of instructions */
-  color: #343a40; /* Dark text for instructions */
+  line-height: 1.8;
+  color: #343a40;
 }
 
 /* Filter Controls Area */
 .filter-controls {
   display: flex;
-  flex-wrap: wrap; /* Allow items to wrap to next line */
-  gap: 1.5rem; /* Spacing between control items */
-  margin-bottom: 2.5rem; /* More space below controls */
-  padding: 1.5rem 2rem; /* Comfortable padding */
-  background-color: #fff; /* Or #f7f9fc for a very light grey */
-  border-radius: 12px; /* Match card styling */
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07); /* Consistent shadow style */
-  align-items: center; /* Vertically align items */
+  flex-wrap: wrap;
+  gap: 1rem; /* Reduced gap slightly */
+  margin-bottom: 2.5rem;
+  padding: 1.5rem; /* Slightly reduced padding */
+  background-color: #f8f9fa; /* Light background for filter area */
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  align-items: center;
 }
 
 .filter-controls input,
 .filter-controls select {
-  padding: 0.8rem 1.2rem; /* Comfortable padding */
-  border: 1px solid #bcccdc; /* Clear but not harsh border */
-  border-radius: 10px; /* Rounded edges for inputs */
-  font-size: 1.05rem;
+  padding: 0.75rem 1rem; /* Adjusted padding */
+  border: 1px solid #ced4da; /* Standard bootstrap-like border */
+  border-radius: 8px; /* Slightly less rounded */
+  font-size: 1rem; /* Standard font size */
   background-color: #fff;
-  height: 52px; /* Taller inputs for easier interaction */
+  height: 48px; /* Adjusted height */
   box-sizing: border-box;
-  line-height: 1.5; /* Ensure text is centered vertically */
-  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* For focus transition */
+  line-height: 1.5;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .filter-controls input:focus,
 .filter-controls select:focus {
-  border-color: #4DB6AC; /* Primary theme color */
-  box-shadow: 0 0 0 3px rgba(77, 182, 172, 0.2); /* Subtle focus ring */
-  outline: none; /* Remove default outline */
+  border-color: #4DB6AC;
+  box-shadow: 0 0 0 0.2rem rgba(77, 182, 172, 0.25); /* Bootstrap-like focus */
+  outline: none;
 }
 
-/* Placeholder text styling */
-.filter-controls input::placeholder {
-  color: #8899aa;
-  opacity: 1; /* Firefox */
-}
-.filter-controls input:-ms-input-placeholder { /* Edge */
-  color: #8899aa;
-}
-.filter-controls input::-ms-input-placeholder { /* IE */
-  color: #8899aa;
-}
+.filter-controls input::placeholder { color: #6c757d; opacity: 1; }
+.filter-controls input:-ms-input-placeholder { color: #6c757d; }
+.filter-controls input::-ms-input-placeholder { color: #6c757d; }
 
-
-/* Specific input styling */
-.filter-controls .search-input {
-  flex: 2 1 280px; /* Allow to grow more, slightly larger basis */
+.filter-controls .search-input { /* Shared by local and external */
+  flex: 2 1 250px;
+}
+.filter-controls .external-search-field {
+  /* Add specific styles if it needs to differ from local-search-field beyond this */
+}
+.filter-controls .local-search-field {
+  /* Add specific styles if it needs to differ */
 }
 
 .filter-controls .prep-time-input {
-  flex: 1 1 200px;
+  flex: 1 1 180px;
 }
-/* Hide spinner buttons on number input for a cleaner look */
 .filter-controls .prep-time-input::-webkit-inner-spin-button,
 .filter-controls .prep-time-input::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 .filter-controls .prep-time-input {
-  -moz-appearance: textfield; /* Firefox */
+  -moz-appearance: textfield;
 }
 
 .filter-controls .sort-select {
-  flex: 1 1 220px; /* Slightly wider basis for select */
-  appearance: none; /* Remove default arrow */
+  flex: 1 1 200px;
+  appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207.5l5%205%205-5%22%20stroke%3D%22%234DB6AC%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E');
   background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1em;
-  padding-right: 3rem; /* Make space for the custom arrow, increased from 2.5rem for comfort */
+  background-position: right 0.8rem center; /* Adjusted position */
+  background-size: 0.9em; /* Adjusted size */
+  padding-right: 2.5rem;
 }
 
-/* Responsive adjustments for filter controls */
-@media (max-width: 768px) {
-  .filter-controls {
-    flex-direction: column; /* Stack controls vertically */
-    padding: 1rem; /* Adjust padding for stacked layout */
-  }
-  .filter-controls input,
-  .filter-controls select {
-    width: 100%; /* Full width for stacked inputs */
-    min-width: 0; /* Reset min-width */
-    flex-basis: auto; /* Reset flex-basis */
-  }
+/* Action Buttons (shared style for External Search, Import) */
+.action-button {
+  padding: 0.75rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+  border: 1px solid transparent;
+  line-height: 1.5;
+  height: 48px; /* Match input height */
+  box-sizing: border-box;
 }
+
+.external-search-button { /* Specific to the external search button */
+  background-color: #5A67D8; /* Indigo */
+  color: white;
+  flex: 1 1 180px; /* Allow it to have a base width */
+}
+.external-search-button:hover {
+  background-color: #4C51BF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* External Search Results Section */
+.external-results-container {
+  margin-top: 2.5rem; /* Match H2 margin */
+  padding-top: 1.5rem; /* Space below the H2 title */
+  border-top: 1px solid #e0e0e0; /* Separator from filters or previous content */
+}
+
+.external-recipe-list {
+  list-style-type: none;
+  padding-left: 0;
+  display: grid; /* Using grid for consistency with local recipes */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.external-recipe-item {
+  background-color: #fdfdfd; /* Slightly off-white */
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 1rem; /* Slightly less padding than local items */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.external-recipe-item h3 {
+  font-size: 1.3rem; /* Adjusted from above */
+  color: #3A506B; /* A different shade for external titles */
+}
+
+.external-recipe-image {
+  width: 100%;
+  max-height: 200px; /* Max height for images */
+  object-fit: cover; /* Cover the area, might crop */
+  border-radius: 6px; /* Rounded corners for image */
+  margin-bottom: 1rem;
+  background-color: #f0f0f0; /* Placeholder bg color */
+}
+.external-recipe-image-placeholder {
+  width: 100%;
+  height: 180px; /* Fixed height for placeholder */
+  background-color: #e9ecef;
+  border: 1px dashed #ced4da;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-weight: 500;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+
+.external-recipe-source a {
+  color: #4DB6AC;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.external-recipe-source a:hover {
+  text-decoration: underline;
+}
+.external-recipe-source {
+  margin-bottom: 1rem;
+  margin-top: auto; /* Push to bottom */
+  font-size: 0.9rem;
+}
+
+
+.import-button { /* Base style for import button */
+  background-color: #4DB6AC; /* Main theme accent */
+  color: white;
+  width: 100%; /* Full width within its container (recipe item padding) */
+  margin-top: 0.5rem; /* Space above button if source link is present */
+}
+.import-button:hover:not(:disabled) {
+  background-color: #3aa396;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.import-button:disabled {
+  background-color: #adb5bd; /* Grey for disabled */
+  color: #6c757d;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.import-button--importing {
+  background-color: #ffc107; /* Amber/Yellow for importing */
+  color: #333;
+  border-color: #ffc107;
+}
+.import-button--imported {
+  background-color: #28a745; /* Green for imported */
+  color: white;
+  border-color: #28a745;
+}
+.import-button--error {
+  background-color: #dc3545; /* Red for error */
+  color: white;
+  border-color: #dc3545;
+}
+
+/* Section Separator Line */
+.section-separator {
+  margin-top: 2.5rem;
+  margin-bottom: 0; /* Reset as H2 has margin-top */
+  border: none;
+  border-top: 1px solid #e0e0e0;
+}
+
 
 /* Pagination Controls Styles */
 .pagination-controls {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1.5rem 0; /* Padding above and below controls */
-  margin-top: 2rem; /* Space above pagination */
+  padding: 1.5rem 0;
+  margin-top: 2rem;
 }
 
 .pagination-button {
-  background-color: #4DB6AC; /* Accent color */
+  background-color: #4DB6AC;
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem; /* Generous padding */
-  margin: 0 0.5rem; /* Space around buttons */
-  border-radius: 8px; /* Rounded corners */
+  padding: 0.75rem 1.5rem;
+  margin: 0 0.5rem;
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -264,17 +405,17 @@
 }
 
 .pagination-button:hover:not(:disabled) {
-  background-color: #3aa396; /* Darker shade on hover */
+  background-color: #3aa396;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .pagination-button:active:not(:disabled) {
-  transform: translateY(2px); /* Slight press down effect */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Smaller shadow when pressed */
+  transform: translateY(2px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .pagination-button:disabled {
-  background-color: #c0c0c0; /* Grey out disabled buttons */
+  background-color: #c0c0c0;
   color: #666;
   cursor: not-allowed;
   box-shadow: none;
@@ -283,30 +424,49 @@
 .page-info {
   font-size: 1rem;
   color: #333;
-  margin: 0 1rem; /* Space around page info text */
+  margin: 0 1rem;
   font-weight: 500;
 }
 
-/* Responsive adjustment for very small screens */
+
+@media (max-width: 768px) {
+  .filter-controls {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  .filter-controls input,
+  .filter-controls select,
+  .external-search-button { /* Ensure button also goes full width */
+    width: 100%;
+    min-width: 0;
+    flex-basis: auto;
+  }
+  .external-recipe-list, .recipe-list {
+    grid-template-columns: 1fr; /* Single column on smaller screens */
+  }
+}
+
+
 @media (max-width: 480px) {
   .recipe-list-container h1 {
     font-size: 2rem;
   }
+  .recipe-list-container h2, .section-title {
+    font-size: 1.6rem;
+  }
 }
 
-/* Accessibility - Prefers Reduced Motion */
+
 @media (prefers-reduced-motion: reduce) {
   .loading-message {
-    animation: none; /* Disable pulse on loading message */
+    animation: none;
   }
   .recipe-item,
-  .pagination-button {
-    /* Effectively disable transitions by making them super fast */
+  .pagination-button,
+  .action-button {
     transition-duration: 0.01ms !important;
-    /* Disable specific transform animations if any were added beyond transitions */
-    /* animation: none !important; */ /* Example if there were keyframe animations */
   }
   .recipe-item:hover {
-    transform: none; /* Disable hover lift if it's too much */
+    transform: none;
   }
 }
