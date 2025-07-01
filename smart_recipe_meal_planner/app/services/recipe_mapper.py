@@ -118,4 +118,37 @@ def map_spoonacular_data_to_dict(
     if not mapped_ingredients_temp:
         logger.warning(f"No ingredients mapped for Spoonacular recipe {spoonacular_id_val} ('{title}').")
 
+    # Extract nutritional information
+    nutrition_data = spoonacular_data.get("nutrition", {})
+    nutrients = nutrition_data.get("nutrients", [])
+
+    calories = None
+    protein = None
+    fat = None
+    carbohydrates = None
+
+    for nutrient in nutrients:
+        name = nutrient.get("name", "").lower()
+        amount = nutrient.get("amount")
+        # unit = nutrient.get("unit") # Unit might be useful for validation later
+
+        if amount is None:
+            continue
+
+        if name == "calories":
+            calories = amount
+        elif name == "protein":
+            protein = amount
+        elif name == "fat":
+            fat = amount
+        elif name == "carbohydrates": # Spoonacular often uses "Net Carbohydrates" or just "Carbohydrates"
+            carbohydrates = amount
+        elif name == "net carbohydrates" and carbohydrates is None: # Prioritize "Carbohydrates" if available
+            carbohydrates = amount
+
+    mapped_recipe_data["calories"] = calories
+    mapped_recipe_data["protein"] = protein
+    mapped_recipe_data["fat"] = fat
+    mapped_recipe_data["carbohydrates"] = carbohydrates
+
     return mapped_recipe_data
