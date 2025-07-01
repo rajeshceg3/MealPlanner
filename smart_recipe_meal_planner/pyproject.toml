@@ -17,6 +17,7 @@ pydantic-settings = "^2.2.1" # Updated version
 sqlalchemy = "^2.0.28"
 psycopg2-binary = "^2.9.9" # For PostgreSQL
 alembic = "^1.13.1"
+beautifulsoup4 = "^4.12.0" # For HTML parsing in recipe mapping
 python-jose = {extras = ["cryptography"], version = "^3.3.0"} # For JWT
 passlib = {extras = ["bcrypt"], version = "^1.7.4"} # For password hashing
 tenacity = "^8.2.3" # For retrying operations (e.g., DB connection)

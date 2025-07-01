@@ -503,14 +503,25 @@ class RecipeService:
         print(f"RecipeService: get_ratings_for_recipe called for recipe_id: {recipe_id}")
         raise NotImplementedError("RecipeService: get_ratings_for_recipe not implemented")
 
-    async def _get_or_create_ingredient(self, name: str, category: Optional[str] = "Unknown") -> DBIngredient:
+    async def _get_or_create_ingredient(
+        self,
+        name: str,
+        category: Optional[str] = "Unknown",
+        calories_per_unit: Optional[float] = None
+    ) -> DBIngredient:
         normalized_name = name.strip().lower()
         stmt = select(DBIngredient).where(func.lower(DBIngredient.name) == normalized_name)
         existing_ingredient = self.db.execute(stmt).scalars().first()
         if existing_ingredient:
             return existing_ingredient
         else:
-            new_ingredient = DBIngredient(name=name.strip(), category=category)
+            # Use provided category, defaulting to "Unknown" if None
+            ingredient_category = category if category is not None else "Unknown"
+            new_ingredient = DBIngredient(
+                name=name.strip(),
+                category=ingredient_category,
+                calories_per_unit=calories_per_unit
+            )
             self.db.add(new_ingredient)
             try:
                 self.db.commit()
@@ -620,7 +631,11 @@ class RecipeService:
         recipe_ingredient_links_create: List[RecipeIngredientLinkCreate] = []
         for ing_data in mapped_data["ingredients_data_temp"]:
             try:
-                ingredient_db_obj = await self._get_or_create_ingredient(name=ing_data["name"])
+                ingredient_db_obj = await self._get_or_create_ingredient(
+                    name=ing_data["name"],
+                    category=ing_data.get("category"), # Pass category from mapped_data
+                    calories_per_unit=ing_data.get("calories_per_unit") # Pass calories_per_unit
+                )
                 recipe_ingredient_links_create.append(
                     RecipeIngredientLinkCreate(
                         ingredient_id=ingredient_db_obj.id, # Use the ID from the DB object

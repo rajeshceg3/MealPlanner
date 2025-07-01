@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from app.models.recipe_schemas import InstructionStepCreate
 from pydantic import HttpUrl
 import logging
+from bs4 import BeautifulSoup # Add this import
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +20,9 @@ def map_spoonacular_data_to_dict(
         raise ValueError("Spoonacular data missing 'title'.")
 
     description = spoonacular_data.get("summary")
-    # Future: consider stripping HTML from description if present.
-    # from bs4 import BeautifulSoup
-    # if description:
-    #     soup = BeautifulSoup(description, "html.parser")
-    #     description = soup.get_text()
+    if description:
+        soup = BeautifulSoup(description, "html.parser")
+        description = soup.get_text()
 
     image_url_str = spoonacular_data.get("image")
     image_url = str(HttpUrl(image_url_str)) if image_url_str else None
@@ -103,11 +102,36 @@ def map_spoonacular_data_to_dict(
              logger.warning(f"Skipping ingredient '{name}' due to missing quantity/unit for recipe {spoonacular_id_val} ('{title}').")
              continue
 
+        category = None
+        if sp_ing.get("aisle"):
+            category = sp_ing.get("aisle").split(";")[0]
+
+        calories_per_unit = None
+        # Hypothetical: Spoonacular might provide nutrition per ingredient
+        # This part is speculative and needs checking against actual Spoonacular data
+        if "nutrition" in sp_ing and "nutrients" in sp_ing["nutrition"]:
+            for nutrient in sp_ing["nutrition"]["nutrients"]:
+                if nutrient.get("name", "").lower() == "calories" and "amount" in nutrient and "unit" in nutrient:
+                    # This is tricky: amount might be for the sp_ing.get("amount")
+                    # We need calories PER sp_ing.get("unit")
+                    # If sp_ing.get("amount") is 1, then nutrient.get("amount") is calories_per_unit
+                    # If sp_ing.get("amount") is > 1, needs division.
+                    # This is a simplification; real calculation might be more involved.
+                    # For now, let's assume if 'amount' (quantity) is 1.0, it's direct, else log/skip.
+                    if float(quantity) == 1.0:
+                        calories_per_unit = float(nutrient["amount"])
+                    else:
+                        # Log that calculation is needed or it's not directly per unit
+                        logger.info(f"Ingredient '{name}': Calorie data present for quantity {quantity} {unit} but not directly per single unit. Requires calculation.")
+                    break
+
         mapped_ingredients_temp.append({
             "name": name.lower(),
             "quantity": float(quantity),
             "unit": unit,
-            "preparation_note": preparation_note
+            "preparation_note": preparation_note,
+            "category": category,
+            "calories_per_unit": calories_per_unit
         })
 
     mapped_recipe_data["ingredients_data_temp"] = mapped_ingredients_temp
