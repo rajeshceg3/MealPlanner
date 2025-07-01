@@ -21,16 +21,39 @@ smart_recipe_meal_planner/
 └── .gitignore                # Git ignore file
 ```
 
-## Setup and Installation (Placeholder)
+## Setup and Installation
 
-Detailed instructions for setting up the development environment, installing dependencies, and running the application will be added here. This will include:
+This section outlines the steps to set up the development environment, install dependencies, and run the application.
 
-*   Python version requirements
-*   Poetry setup
-*   Database setup (PostgreSQL)
-*   Environment variable configuration (`.env` file)
-*   Running migrations
-*   Starting the FastAPI server
+*   **Python Version:** Ensure you have Python 3.8 or higher installed.
+*   **Poetry:** This project uses Poetry for dependency management. Install Poetry if you haven't already (see [Poetry documentation](https://python-poetry.org/docs/#installation)).
+*   **Dependencies:** Navigate to the project root (`smart_recipe_meal_planner/`) and run `poetry install` to create a virtual environment and install all required dependencies.
+*   **Database Setup:**
+    *   This application uses PostgreSQL. Ensure you have a PostgreSQL server running.
+    *   Configure your database connection details in a `.env` file (see Environment Variables section below). Key variables include `DATABASE_URL`.
+    *   Example: `DATABASE_URL="postgresql+asyncpg://user:password@host:port/dbname"`
+*   **Environment Variables:**
+    *   The application uses environment variables for configuration, managed via a `.env` file in the project root (`smart_recipe_meal_planner/`). Create this file if it doesn't exist.
+    *   **Spoonacular API Key:** To enable recipe import from Spoonacular, you need an API key.
+        *   The API key is essential for any features that interact with the Spoonacular API.
+        *   Add your Spoonacular API key to your `.env` file like this:
+            ```env
+            SPOONACULAR_API_KEY="your_actual_api_key_here"
+            ```
+        *   You can obtain an API key by registering on the [Spoonacular API website](https://spoonacular.com/food-api).
+    *   Other environment variables like database connection strings (e.g., `DATABASE_URL`) and JWT secrets (e.g., `SECRET_KEY`, `ALGORITHM`) also need to be defined in the `.env` file.
+*   **Database Migrations:**
+    *   Once your database connection is configured in `.env`, run database migrations using Alembic. From the project root, with Poetry's virtual environment active, you might run:
+        ```bash
+        poetry shell
+        alembic upgrade head
+        ```
+*   **Starting the FastAPI Server:**
+    *   With the environment active and migrations applied, start the FastAPI development server using Uvicorn:
+        ```bash
+        poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+        ```
+    *   The `--reload` flag enables auto-reloading on code changes, useful for development.
 
 ## API Documentation
 
