@@ -44,6 +44,10 @@ class RecipeBase(OrmBaseModel):
     image_url: Optional[HttpUrl] = None
     source_url: Optional[HttpUrl] = None
     spoonacular_id: Optional[int] = Field(None, description="Spoonacular recipe ID, if imported from Spoonacular.")
+    calories: Optional[float] = Field(None, ge=0, description="Calories per serving")
+    protein: Optional[float] = Field(None, ge=0, description="Protein per serving in grams")
+    carbohydrates: Optional[float] = Field(None, ge=0, description="Carbohydrates per serving in grams")
+    fat: Optional[float] = Field(None, ge=0, description="Fat per serving in grams")
 
 class RecipeCreate(RecipeBase):
     instructions: List[InstructionStepCreate] = Field(..., min_length=1)
@@ -62,6 +66,10 @@ class RecipeUpdate(BaseModel):
     source_url: Optional[HttpUrl] = None
     instructions: Optional[List[InstructionStepCreate]] = Field(None, min_length=1)
     ingredients: Optional[List[RecipeIngredientLinkCreate]] = Field(None, min_length=1)
+    calories: Optional[float] = Field(None, ge=0, description="Calories per serving")
+    protein: Optional[float] = Field(None, ge=0, description="Protein per serving in grams")
+    carbohydrates: Optional[float] = Field(None, ge=0, description="Carbohydrates per serving in grams")
+    fat: Optional[float] = Field(None, ge=0, description="Fat per serving in grams")
 
 class RecipePublic(RecipeBase):
     id: uuid.UUID

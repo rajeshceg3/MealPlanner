@@ -19,6 +19,10 @@ class Recipe(Base):
     created_by_user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=True) # Added index=True as per example, though not strictly required by task
     average_rating = Column(Numeric(3, 2), server_default='0.00', nullable=False)
     rating_count = Column(Integer, server_default='0', nullable=False)
+    calories = Column(Numeric(10, 2), nullable=True)
+    protein = Column(Numeric(10, 2), nullable=True)
+    carbohydrates = Column(Numeric(10, 2), nullable=True)
+    fat = Column(Numeric(10, 2), nullable=True)
 
     creator_user = relationship("User", back_populates="recipes_created")
     recipe_ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
