@@ -43,7 +43,12 @@ class RecipeService:
             image_url=str(recipe_in.image_url) if recipe_in.image_url else None,
             source_url=str(recipe_in.source_url) if recipe_in.source_url else None,
             created_by_user_id=user_id,
-            spoonacular_id=recipe_in.spoonacular_id # Added spoonacular_id
+            spoonacular_id=recipe_in.spoonacular_id, # Added spoonacular_id
+            # Add new nutritional fields
+            calories=recipe_in.calories,
+            protein=recipe_in.protein,
+            carbohydrates=recipe_in.carbohydrates,
+            fat=recipe_in.fat
         )
 
         # Handle ingredients
@@ -114,7 +119,12 @@ class RecipeService:
             recipe_ingredients=recipe_ingredients_public,
             user_has_saved=None, # Not handled in this method
             user_rating=None,    # Not handled in this method
-            spoonacular_id=db_recipe_obj.spoonacular_id # Added spoonacular_id
+            spoonacular_id=db_recipe_obj.spoonacular_id, # Added spoonacular_id
+            # Add new nutritional fields to the response
+            calories=db_recipe_obj.calories,
+            protein=db_recipe_obj.protein,
+            carbohydrates=db_recipe_obj.carbohydrates,
+            fat=db_recipe_obj.fat
         )
 
     async def get_recipes_list(
@@ -213,7 +223,12 @@ class RecipeService:
                     recipe_ingredients=recipe_ingredients_public,
                     user_has_saved=None, # Not determined in this list view
                     user_rating=None,    # Not determined in this list view
-                    spoonacular_id=db_recipe.spoonacular_id # Added spoonacular_id
+                    spoonacular_id=db_recipe.spoonacular_id, # Added spoonacular_id
+                    # Add new nutritional fields to the response
+                    calories=db_recipe.calories,
+                    protein=db_recipe.protein,
+                    carbohydrates=db_recipe.carbohydrates,
+                    fat=db_recipe.fat
                 )
             )
 
@@ -307,7 +322,12 @@ class RecipeService:
             recipe_ingredients=recipe_ingredients_public,
             user_has_saved=user_has_saved_status,
             user_rating=user_specific_rating,
-            spoonacular_id=db_recipe.spoonacular_id # Added spoonacular_id
+            spoonacular_id=db_recipe.spoonacular_id, # Added spoonacular_id
+            # Add new nutritional fields to the response
+            calories=db_recipe.calories,
+            protein=db_recipe.protein,
+            carbohydrates=db_recipe.carbohydrates,
+            fat=db_recipe.fat
         )
 
     async def update_recipe(self, recipe_id: UUID, recipe_in: RecipeUpdate, user_id: UUID) -> Optional[RecipePublic]:
@@ -430,7 +450,12 @@ class RecipeService:
             recipe_ingredients=recipe_ingredients_public,
             user_has_saved=None, # TODO: Implement if needed
             user_rating=None,    # TODO: Implement if needed
-            spoonacular_id=db_recipe.spoonacular_id # Added spoonacular_id
+            spoonacular_id=db_recipe.spoonacular_id, # Added spoonacular_id
+            # Add new nutritional fields to the response
+            calories=db_recipe.calories,
+            protein=db_recipe.protein,
+            carbohydrates=db_recipe.carbohydrates,
+            fat=db_recipe.fat
         )
 
     async def delete_recipe(self, recipe_id: UUID, user_id: UUID) -> bool:
@@ -563,7 +588,7 @@ class RecipeService:
         client = None
         try:
             client = SpoonacularClient()
-            spoonacular_recipe_data = await client.get_recipe_details(spoonacular_id, include_nutrition=False)
+            spoonacular_recipe_data = await client.get_recipe_details(spoonacular_id, include_nutrition=True)
         except SpoonacularRateLimitException as e:
             logger.error(f"Spoonacular API rate limit for recipe {spoonacular_id}: {e}")
             raise
@@ -641,6 +666,10 @@ class RecipeService:
                 image_url=mapped_data.get("image_url"),
                 source_url=mapped_data.get("source_url"),
                 spoonacular_id=mapped_data["spoonacular_id"], # This is now part of RecipeBase and thus RecipeCreate
+                calories=mapped_data.get("calories"),
+                protein=mapped_data.get("protein"),
+                carbohydrates=mapped_data.get("carbohydrates"),
+                fat=mapped_data.get("fat"),
                 instructions=instructions_create_list,
                 ingredients=recipe_ingredient_links_create
             )

@@ -161,8 +161,18 @@ const RecipeList = () => {
         // Assuming responseData.data is the successfully imported recipe object
         // and it conforms to the structure expected by the local recipe list.
         if (responseData && responseData.data && responseData.data.id) {
+
           setAllRecipes(prevRecipes => [responseData.data, ...prevRecipes]);
           alert(`Successfully imported '${title}'! It has been added to your saved recipes.`);
+
+          const recipeExists = allRecipes.some(recipe => recipe.id === responseData.data.id);
+          if (recipeExists) {
+            alert(`Recipe '${title}' is already in your saved recipes.`);
+          } else {
+            setAllRecipes(prevRecipes => [responseData.data, ...prevRecipes]);
+            alert(`Successfully imported '${title}'! It has been added to your saved recipes.`);
+          }
+
         } else {
           // This case might indicate an issue with the backend response structure
           console.error('Import successful, but recipe data not in expected format:', responseData);
