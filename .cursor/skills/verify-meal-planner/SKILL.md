@@ -1,6 +1,6 @@
 ---
 name: verify-meal-planner
-description: Verifies the Smart Recipe Meal Planner backend against its promised behavior - the full pytest suite (unit, API, and integration tests) plus a route-ordering smoke check - with machine-readable evidence.
+description: Verifies the Smart Recipe Meal Planner against its promised behavior - the backend pytest suite (unit, API, and integration tests), a route-ordering smoke check, the frontend vite build, and the frontend vitest suite - with machine-readable evidence.
 ---
 
 # Verify Meal Planner
@@ -28,6 +28,10 @@ the runner picks it up automatically when present.
 1. Route-table smoke check: `GET /api/v1/recipes/search-external` must be
    answered by the search-external route, not shadowed by
    `/recipes/{recipe_id}` (a UUID-parse 422 signals the regression).
+2. Backend pytest suite under `smart_recipe_meal_planner/app/tests`.
+3. Frontend: `npm ci` (when node_modules is absent), `vite build`, and the
+   vitest suite under `smart_recipe_meal_planner/frontend/ui`. Requires
+   npm on PATH; the doctor gates on it.
 2. `pytest app/tests`: the unit, API, and integration suites.
 
 ## Evidence

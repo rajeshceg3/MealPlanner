@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest'; // Changed from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react'; // To process JSX from React components
 
 export default defineConfig({

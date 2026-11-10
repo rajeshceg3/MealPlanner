@@ -40,7 +40,7 @@ describe('App Component', () => {
     // Wait for RecipeList to process the mocked fetch and render its state
     // We expect "No recipes found." due to the mockFetchEmptyRecipes
     await waitFor(() => {
-      expect(screen.getByText('No recipes found.')).toBeInTheDocument();
+      expect(screen.getByText('No saved recipes found.')).toBeInTheDocument();
     });
   });
 
