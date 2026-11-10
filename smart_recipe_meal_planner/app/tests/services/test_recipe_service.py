@@ -8,6 +8,7 @@ from app.services.recipe_service import RecipeService
 from app.clients.spoonacular_client import SpoonacularClient, SpoonacularException
 from app.models.recipe_schemas import RecipeCreate, RecipePublic
 from app.db.models.recipe_model import Recipe as DBRecipe
+from app.db.models.ingredient_model import Ingredient as DBIngredient
 from app.db.models.user_model import User # Assuming User model is needed for created_by_user_id
 
 # Sample Spoonacular response with nutritional information
@@ -112,10 +113,7 @@ async def test_import_recipe_from_spoonacular_with_nutrition(recipe_service: Rec
 
     # Mock _get_or_create_ingredient to simplify ingredient handling
     # It should return a mock DBIngredient object with an ID
-    mock_ingredient_db = MagicMock()
-    mock_ingredient_db.id = uuid4()
-    mock_ingredient_db.name = "Test Ingredient"
-    mock_ingredient_db.category = "Test Category"
+    mock_ingredient_db = DBIngredient(id=uuid4(), name="Test Ingredient", category="Test Category")
 
     # The service calls `self.db.execute(stmt).scalars().first()` for existing ingredient checks,
     # and `self.db.add`, `self.db.commit`, `self.db.refresh` for new ones.
@@ -123,6 +121,10 @@ async def test_import_recipe_from_spoonacular_with_nutrition(recipe_service: Rec
     # We can mock it directly on the service instance for a more focused unit test.
 
     recipe_service._get_or_create_ingredient = AsyncMock(return_value=mock_ingredient_db)
+
+    # create_recipe (called by the import flow) re-fetches each linked ingredient
+    # via self.db.query(DBIngredient).get(ingredient_id)
+    mock_db_session.query.return_value.get.return_value = mock_ingredient_db
 
     with patch('app.services.recipe_service.SpoonacularClient', return_value=mock_spoonacular_client):
         # Mocking the DB behavior for create_recipe part
@@ -155,7 +157,7 @@ async def test_import_recipe_from_spoonacular_with_nutrition(recipe_service: Rec
                 if not hasattr(ri, 'ingredient') or ri.ingredient is None:
                     # Attach a mock DBIngredient if not present.
                     # This assumes ri.ingredient_id is set.
-                    mock_ing = MagicMock()
+                    mock_ing = DBIngredient()
                     mock_ing.id = ri.ingredient_id
                     mock_ing.name = "Mocked Ing from Refresh"
                     mock_ing.category = "Mocked Cat"
@@ -188,9 +190,10 @@ async def test_import_recipe_from_spoonacular_no_nutrition(recipe_service: Recip
 
     mock_spoonacular_client.get_recipe_details.return_value = SAMPLE_SPOONACULAR_NO_NUTRITION_RESPONSE
 
-    mock_ingredient_db = MagicMock()
-    mock_ingredient_db.id = uuid4()
+    mock_ingredient_db = DBIngredient(id=uuid4(), name="Test Ingredient", category="Test Category")
     recipe_service._get_or_create_ingredient = AsyncMock(return_value=mock_ingredient_db)
+
+    mock_db_session.query.return_value.get.return_value = mock_ingredient_db
 
     captured_db_recipe = None
     def capture_add(obj):
@@ -205,7 +208,7 @@ async def test_import_recipe_from_spoonacular_no_nutrition(recipe_service: Recip
         obj.rating_count = 0
         for ri in obj.recipe_ingredients:
             if not hasattr(ri, 'ingredient') or ri.ingredient is None:
-                mock_ing = MagicMock()
+                mock_ing = DBIngredient()
                 mock_ing.id = ri.ingredient_id
                 mock_ing.name = "Mocked Ing from Refresh"
                 mock_ing.category = "Mocked Cat"
@@ -290,7 +293,7 @@ async def test_create_recipe_with_nutrition(recipe_service: RecipeService, mock_
         # Populate ri.ingredient for each item in obj.recipe_ingredients
         for ri in obj.recipe_ingredients:
             if not hasattr(ri, 'ingredient') or ri.ingredient is None:
-                mock_ing = MagicMock(spec=DBIngredient)
+                mock_ing = DBIngredient()
                 mock_ing.id = ri.ingredient_id
                 mock_ing.name = "Mocked Ing In Refresh"
                 mock_ing.category = "Mocked Cat"
@@ -365,7 +368,7 @@ async def test_create_recipe_without_nutrition(recipe_service: RecipeService, mo
         obj.rating_count = 0
         for ri in obj.recipe_ingredients: # Ensure .ingredient is populated
             if not hasattr(ri, 'ingredient') or ri.ingredient is None:
-                mock_ing = MagicMock(spec=DBIngredient)
+                mock_ing = DBIngredient()
                 mock_ing.id = ri.ingredient_id
                 mock_ing.name = "Mocked Ing In Refresh"
                 mock_ing.category = "Mocked Cat"
@@ -397,84 +400,3 @@ async def test_create_recipe_without_nutrition(recipe_service: RecipeService, mo
     assert captured_db_recipe.protein is None
     assert captured_db_recipe.carbohydrates is None
     assert captured_db_recipe.fat is None
-
-# Note: The actual carbohydrate value asserted for SAMPLE_SPOONACULAR_NUTRITION_RESPONSE
-# depends on the mapper logic: if it finds "Carbohydrates" first or "Net Carbohydrates".
-# The current mapper logic:
-# if name == "carbohydrates": carbohydrates = amount
-# elif name == "net carbohydrates" and carbohydrates is None: carbohydrates = amount
-# So, if "Carbohydrates" is present, it will be used.
-# SAMPLE_SPOONACULAR_NUTRITION_RESPONSE has "Carbohydrates" with amount 75.0. So, 75.0 is correct.
-
-# Further tests could include:
-# - What if Spoonacular returns nutrition info as strings? (The Pydantic models expect float)
-#   The mapper currently takes `amount` as is. Pydantic will try to coerce.
-# - Test edge cases for `_get_or_create_ingredient` if that logic is complex.
-#   (Here, it's mostly mocked on the service for simplicity).
-# - Test updates to recipes with nutritional info. (RecipeUpdate schema was also updated).
-#   This would involve `RecipeService.update_recipe`.
-# - Ensure the test database session (`mock_db_session`) accurately mocks all necessary DB calls
-#   for the methods under test. This can get quite involved.
-#   For example, the `create_recipe` and `import_recipe_from_spoonacular` methods in `RecipeService`
-#   interact with `DBRecipe`, `DBRecipeIngredient`, and `DBIngredient` tables.
-#   The current mocks are somewhat simplified.
-#   A more robust approach for service layer tests might involve an in-memory SQLite database
-#   with real SQLAlchemy models, if true async support for SQLite in tests is handled.
-#   However, for unit tests with mocks, this level of detail is a common trade-off.
-
-# One key aspect for the create_recipe part of the tests:
-# The RecipeService.create_recipe method, when constructing RecipePublic, does this:
-# `ingredient_db = self.db.query(DBIngredient).get(ri.ingredient_id)`
-# This needs to be mocked in `mock_db_session` for `test_create_recipe_...` tests.
-# I've added a basic mock for this in `test_create_recipe_with_nutrition` and `_without_nutrition`.
-# The `captured_db_recipe.calories` etc. assertions in `test_create_recipe_...` are good
-# because they check what's actually being written to the DB model before commit.
-
-# The `mock_refresh` function needs to ensure that `ri.ingredient` is populated
-# because the `RecipePublic` construction relies on it.
-# I've updated `mock_refresh` in all tests to simulate this.
-
-# Final check on the carbohydrate assertion:
-# SAMPLE_SPOONACULAR_NUTRITION_RESPONSE has:
-#   {"name": "Carbohydrates", "amount": 75.0, "unit": "g"},
-#   {"name": "Net Carbohydrates", "amount": 70.0, "unit": "g"}
-# The mapper logic is:
-#   if name == "carbohydrates": carbohydrates = amount
-#   elif name == "net carbohydrates" and carbohydrates is None: carbohydrates = amount
-# So, "Carbohydrates" (75.0) will be picked first. The assertion `assert result_recipe.carbohydrates == 75.0` is correct.
-
-# One more check: the `create_recipe` in `RecipeService` does not directly take nutritional fields.
-# It takes a `RecipeCreate` object. `RecipeCreate` *does* have these fields.
-# The service then creates a `DBRecipe` object.
-# `db_recipe_obj = DBRecipe(title=recipe_in.title, ..., spoonacular_id=recipe_in.spoonacular_id)`
-# This instantiation of `DBRecipe` needs to also pass the nutritional fields from `recipe_in`.
-# This was NOT part of the previous subtasks for `recipe_service.py` explicitly, but it's an
-# implied change for `create_recipe` to fully support the new fields in `RecipeCreate`.
-# Let's assume for now the tests I've written for `create_recipe` will FAIL if `DBRecipe`
-# is not correctly populated with these fields from `recipe_in` within `RecipeService.create_recipe`.
-# If they fail, a subsequent step would be to fix `RecipeService.create_recipe`.
-# The current tests assert `captured_db_recipe.calories == recipe_in.calories`, etc.
-# This will verify if the `DBRecipe` model instance gets these values.
-# It's possible `RecipeService.create_recipe` needs an update like:
-# `calories=recipe_in.calories, protein=recipe_in.protein, ...` when creating `DBRecipe`.
-# I will add this to the report as a potential necessary change if tests fail.
-# Let's assume the tests pass for now and the `DBRecipe` instantiation is correct.
-# (The Pydantic model `RecipeCreate` has the fields, and the DB model `DBRecipe` has them.
-# The SQLAlchemy model instantiation `DBRecipe(...)` will map them if `recipe_in.calories` etc. are passed).
-# This is an important point, I should verify this in `RecipeService.create_recipe`.
-# I will do a quick read of `RecipeService.create_recipe` again.
-
-# Ok, I will re-read `recipe_service.py` specifically for the `create_recipe` method's instantiation of `DBRecipe`.
-# This is crucial for the `test_create_recipe_...` tests to be valid.
-# (This is a self-correction/verification step based on writing the tests).I've created the test file `smart_recipe_meal_planner/app/tests/services/test_recipe_service.py` with:
--   Mock Spoonacular responses (with and without nutrition).
--   Fixtures for `mock_db_session`, `mock_spoonacular_client`, and `recipe_service`.
--   Test for `import_recipe_from_spoonacular` with full nutrition data, asserting correct mapping.
--   Test for `import_recipe_from_spoonacular` with missing nutrition data, asserting fields are `None`.
--   Tests for `create_recipe` (which uses `RecipeCreate` Pydantic model that now includes nutritional fields):
-    -   One test providing nutritional data.
-    -   One test omitting nutritional data (fields should be `None`).
-
-A critical point arose while writing these tests: the `RecipeService.create_recipe` method itself needs to map the nutritional fields from the input `RecipeCreate` Pydantic model to the `DBRecipe` SQLAlchemy model when it's instantiated. If it doesn't, the `test_create_recipe_*` tests will fail on assertions like `captured_db_recipe.calories == recipe_in.calories`.
-
-I need to verify the `create_recipe` method in `recipe_service.py` to ensure it correctly passes these new fields.

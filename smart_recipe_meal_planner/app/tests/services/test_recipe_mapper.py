@@ -147,7 +147,7 @@ class TestRecipeMapper(unittest.TestCase):
         # Example: self.assertIn("Skipping ingredient 'Salt' due to missing quantity", cm.output[0])
         self.assertTrue(any("Skipping ingredient 'Salt' due to missing quantity" in log_msg for log_msg in cm.output))
         self.assertTrue(any("Skipping ingredient with no name" in log_msg for log_msg in cm.output))
-        self.assertTrue(any("Ingredient 'tomato': Calorie data present for quantity 2.0 pieces but not directly per single unit." in log_msg for log_msg in cm.output))
+        self.assertTrue(any("Ingredient 'Tomato': Calorie data present for quantity 2.0 pieces but not directly per single unit." in log_msg for log_msg in cm.output))
 
 
         # Instructions Mapping

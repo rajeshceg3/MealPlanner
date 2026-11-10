@@ -618,7 +618,9 @@ class RecipeService:
             mapped_data = map_spoonacular_data_to_dict(spoonacular_recipe_data, spoonacular_id)
         except ValueError as e: # Catch specific mapping errors
             logger.error(f"Mapping error for Spoonacular recipe {spoonacular_id}: {e}")
-            raise Exception(f"Error processing recipe data: {e}") from e
+            # Keep this a ValueError: the endpoint maps it to 422 (unprocessable
+            # source data), not 500 (server fault).
+            raise ValueError(f"Error processing recipe data: {e}") from e
 
         # Ensure ingredients are present after mapping
         if not mapped_data.get("ingredients_data_temp"):

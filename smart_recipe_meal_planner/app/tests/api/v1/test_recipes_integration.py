@@ -1,23 +1,28 @@
 import pytest
-from unittest.mock import patch, AsyncMock
+from datetime import datetime, timezone
+from unittest.mock import patch, AsyncMock, MagicMock
 from uuid import uuid4
+
+from app.api.v1.dependencies import get_current_active_user, get_db
+from app.db.models.ingredient_model import Ingredient as DBIngredient
+from app.db.models.recipe_model import Recipe as DBRecipe
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session # For type hinting and conceptual DB checks
 
 # Assuming your FastAPI app instance is in app.main.app
 # Adjust this import based on your actual project structure
-# from smart_recipe_meal_planner.app.main import app
+# from app.main import app
 # For this subtask, we'll assume 'app' can be imported or provided by a fixture.
 
 # Placeholder for actual database models if direct DB checks were fully implemented here
-# from smart_recipe_meal_planner.app.db.models.recipe_model import Recipe as DBRecipe
-# from smart_recipe_meal_planner.app.db.models.user_model import User as DBUser
+# from app.db.models.recipe_model import Recipe as DBRecipe
+# from app.db.models.user_model import User as DBUser
 
-from smart_recipe_meal_planner.app.clients.spoonacular_client import SpoonacularException, SpoonacularRateLimitException
+from app.clients.spoonacular_client import SpoonacularException, SpoonacularRateLimitException
 
 # Path to the SpoonacularClient where it's instantiated in the service layer
-MOCK_SPOONACULAR_CLIENT_PATH = "smart_recipe_meal_planner.app.services.recipe_service.SpoonacularClient"
+MOCK_SPOONACULAR_CLIENT_PATH = "app.services.recipe_service.SpoonacularClient"
 
 # Dummy user ID for created_by_user_id checks, assuming auth provides this.
 # In a real setup, auth_headers fixture would create a user and use their ID.
@@ -89,18 +94,69 @@ MOCK_RECIPE_DATA_MISSING_TITLE = {
 
 # Pytest fixtures would typically be in conftest.py
 # These are conceptual placeholders for what the tests would need.
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def client():
-    # In a real setup, this would import the FastAPI app and wrap it in TestClient
-    # from smart_recipe_meal_planner.app.main import app
-    # with TestClient(app) as c:
-    #     yield c
-    # For now, returning a simple mock that can have methods like .post()
-    # This won't actually run an HTTP server but allows testing the call structure.
-    # A real TestClient is needed for full integration. For this subtask, we focus on test structure.
-    # This placeholder will cause tests to fail if not replaced by a real TestClient.
-    # For the purpose of this subtask, assume 'client' is a working TestClient.
-    pass # This should be a real TestClient provided by the test environment
+    """Real TestClient over the app with the DB session replaced by a stateful mock.
+
+    The mock session behaves like an empty database that remembers what was
+    committed: recipes and ingredients added through it can be found by the
+    service's own follow-up queries, so flows like import-twice-is-idempotent
+    exercise the real service and endpoint code end to end (only the
+    Spoonacular HTTP client is patched, per-test).
+    """
+    from app.main import app as fastapi_app
+
+    state = {"recipe": None, "ingredients": {}}
+    session = MagicMock(spec=Session)
+
+    def _execute(stmt):
+        result = MagicMock()
+        found = state["recipe"] if "FROM recipes" in str(stmt) else None
+        result.scalars.return_value.first.return_value = found
+        result.scalar_one_or_none.return_value = found
+        return result
+
+    def _add(obj):
+        if isinstance(obj, DBRecipe):
+            state["recipe"] = obj
+
+    def _refresh(obj):
+        if isinstance(obj, DBIngredient):
+            if obj.id is None:
+                obj.id = uuid4()
+            state["ingredients"][obj.id] = obj
+        elif isinstance(obj, DBRecipe):
+            if obj.id is None:
+                obj.id = uuid4()
+            now = datetime.now(timezone.utc)
+            if obj.created_at is None:
+                obj.created_at = now
+            if obj.updated_at is None:
+                obj.updated_at = now
+            if obj.average_rating is None:
+                obj.average_rating = 0.0
+            if obj.rating_count is None:
+                obj.rating_count = 0
+            for ri in obj.recipe_ingredients:
+                ingredient = state["ingredients"].get(ri.ingredient_id)
+                if ingredient is not None:
+                    ri.ingredient = ingredient
+
+    session.execute.side_effect = _execute
+    session.add.side_effect = _add
+    session.refresh.side_effect = _refresh
+    session.query.return_value.get.side_effect = lambda pk: state["ingredients"].get(pk)
+
+    class _DummyUser:
+        id = DUMMY_USER_ID
+        email = "integration@example.com"
+        is_active = True
+
+    fastapi_app.dependency_overrides[get_db] = lambda: session
+    fastapi_app.dependency_overrides[get_current_active_user] = lambda: _DummyUser()
+    with TestClient(fastapi_app) as c:
+        yield c
+    fastapi_app.dependency_overrides.clear()
 
 @pytest.fixture(scope="module")
 def db_session(): # Placeholder for a test DB session
@@ -248,9 +304,9 @@ def test_import_recipe_spoonacular_api_error(client: TestClient, auth_headers):
             headers=auth_headers
         )
 
-    # The RecipeService catches SpoonacularException and raises HTTPException(503)
+    # The endpoint maps SpoonacularException to 503 with the exception message
     assert response.status_code == 503 # Service Unavailable
-    assert "Spoonacular API error" in response.json()["detail"]
+    assert "API unavailable" in response.json()["detail"]
 
 
 def test_import_recipe_spoonacular_rate_limit_error(client: TestClient, auth_headers):
@@ -269,9 +325,9 @@ def test_import_recipe_spoonacular_rate_limit_error(client: TestClient, auth_hea
             headers=auth_headers
         )
 
-    # The RecipeService catches SpoonacularRateLimitException and raises HTTPException(429)
+    # The endpoint maps SpoonacularRateLimitException to 429 with the exception message
     assert response.status_code == 429 # Too Many Requests
-    assert "Spoonacular API rate limit" in response.json()["detail"]
+    assert "Rate limit exceeded" in response.json()["detail"]
 
 
 def test_import_recipe_data_mapping_error(client: TestClient, auth_headers):
@@ -326,7 +382,9 @@ def test_import_recipe_data_mapping_error(client: TestClient, auth_headers):
     # `  raise Exception(f"Error processing recipe data: {e}") from e`
     # This will lead to a 500.
 
-    assert response.status_code == 500 # Due to service wrapping ValueError into generic Exception
+    # Mapping failures are source-data problems: the service raises ValueError and
+    # the endpoint maps that to 422, not a generic 500.
+    assert response.status_code == 422
     # Example detail: "Internal server error. Please try again later."
     # Or, if the detail from the wrapped exception is passed:
     assert "Error processing recipe data: Spoonacular data missing 'title'." in response.json()["detail"]

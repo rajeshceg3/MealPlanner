@@ -60,6 +60,8 @@ def map_spoonacular_data_to_dict(
                         instructions_dict_list.append(instruction_model.model_dump())
                     except Exception as e:
                         logger.warning(f"Skipping invalid instruction step for recipe {spoonacular_id_val}: {step_data}. Error: {e}")
+                else:
+                    logger.warning(f"Skipping invalid instruction step for recipe {spoonacular_id_val}: {step_data}. Missing 'number' or 'step' field.")
     elif spoonacular_data.get("instructions"):
         plain_instructions_text = spoonacular_data.get("instructions")
         if isinstance(plain_instructions_text, str) and plain_instructions_text.strip():
