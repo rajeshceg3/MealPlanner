@@ -7,6 +7,8 @@ Standard library plus the project venv. Exit 0 and FAILURES=0 mean green.
 """
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -57,6 +59,29 @@ print("search-external answered with", r.status_code)
                            cwd=BACKEND_ROOT, capture_output=True, text=True)
     tail = (suite.stdout.strip().splitlines() or [''])[-1]
     record('backend test suite green', suite.returncode == 0 and 'passed' in tail, tail)
+
+    # Frontend: vite build + vitest suite
+    fe = os.path.join(BACKEND_ROOT, 'frontend', 'ui')
+    npm = shutil.which('npm')
+    record('doctor: npm on PATH', npm is not None, npm or 'not found')
+    if npm is None:
+        return finish()
+    if not os.path.isdir(os.path.join(fe, 'node_modules')):
+        ci = subprocess.run([npm, 'ci', '--no-audit', '--no-fund'], cwd=fe,
+                            capture_output=True, text=True, timeout=600)
+        record('frontend npm ci', ci.returncode == 0, ci.stderr.strip()[-200:])
+        if ci.returncode != 0:
+            return finish()
+    build = subprocess.run([npm, 'run', 'build'], cwd=fe,
+                           capture_output=True, text=True, timeout=600)
+    record('frontend vite build green', build.returncode == 0,
+           (build.stdout.strip().splitlines() or [''])[-1] if build.returncode == 0
+           else (build.stdout + build.stderr).strip()[-300:])
+    vitest = subprocess.run([os.path.join(fe, 'node_modules', '.bin', 'vitest'), 'run'],
+                            cwd=fe, capture_output=True, text=True, timeout=600)
+    m = re.search(r'Tests\s+(\d+) passed', vitest.stdout)
+    record('frontend vitest suite green', vitest.returncode == 0,
+           ('%s tests passed' % m.group(1)) if m else (vitest.stdout + vitest.stderr).strip()[-200:])
     return finish()
 
 

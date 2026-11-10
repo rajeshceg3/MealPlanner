@@ -7,6 +7,12 @@ import RecipeList from './RecipeList';
 // Mock the global fetch function
 global.fetch = vi.fn();
 
+// Section headings share the h2 level with recipe titles; exclude them.
+const getRecipeTitles = () =>
+  screen.getAllByRole('heading', { level: 2 })
+    .map(h => h.textContent)
+    .filter(t => t !== 'External Recipe Search Results' && t !== 'My Saved Recipes');
+
 const MOCK_RECIPES_RESPONSE = {
   data: [
     { id: '1', title: 'Apple Pie', description: 'Sweet apple dessert', time_to_prepare: 60, servings: 8, ingredients: ['apple', 'sugar', 'flour'], instructions: 'Bake it.' },
@@ -96,7 +102,7 @@ describe('RecipeList Component - Initial Rendering', () => {
     render(<RecipeList />);
 
     await waitFor(() => {
-      expect(screen.getByText('No recipes found.')).toBeInTheDocument();
+      expect(screen.getByText('No saved recipes found.')).toBeInTheDocument();
     });
     expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
   });
@@ -109,7 +115,7 @@ describe('RecipeList Component - Initial Rendering', () => {
     render(<RecipeList />);
 
     await waitFor(() => {
-      expect(screen.getByText('No recipes found.')).toBeInTheDocument();
+      expect(screen.getByText('No saved recipes found.')).toBeInTheDocument();
     });
     expect(console.warn).toHaveBeenCalledWith("Unexpected response structure:", { unexpected: "structure" });
   });
@@ -183,7 +189,7 @@ describe('RecipeList Component - Search and Filtering', () => {
       await userEvent.type(searchInput, 'NonExistentRecipeZZZ');
     });
 
-    expect(screen.getByText('No recipes match your criteria.')).toBeInTheDocument();
+    expect(screen.getByText('No recipes match your criteria for saved recipes.')).toBeInTheDocument();
   });
 });
 
@@ -194,7 +200,8 @@ describe('RecipeList Component - Sorting', () => {
     mockFetchSuccess();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(<RecipeList />);
-    await waitFor(() => expect(screen.getByText('Apple Pie')).toBeInTheDocument());
+    // Pancakes only reaches page 1 after the default sort applies; waits out the sort effect.
+    await waitFor(() => expect(screen.getByText('Pancakes')).toBeInTheDocument());
   });
 
   afterEach(() => {
@@ -202,7 +209,7 @@ describe('RecipeList Component - Sorting', () => {
   });
 
   test('sorts by Title (A-Z) by default', () => {
-    const recipeTitles = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
+    const recipeTitles = getRecipeTitles();
     // First page (6 items)
     expect(recipeTitles).toEqual([
       'Apple Pie',
@@ -219,7 +226,7 @@ describe('RecipeList Component - Sorting', () => {
     await act(async () => {
       await userEvent.selectOptions(sortSelect, 'title-desc');
     });
-    const recipeTitles = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
+    const recipeTitles = getRecipeTitles();
     expect(recipeTitles).toEqual([
       'Vegetable Stir-fry',
       'Spaghetti Bolognese',
@@ -235,7 +242,7 @@ describe('RecipeList Component - Sorting', () => {
     await act(async () => {
       await userEvent.selectOptions(sortSelect, 'time-asc');
     });
-    const recipeTitles = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
+    const recipeTitles = getRecipeTitles();
     expect(recipeTitles).toEqual([
       'Salmon Salad',       // 15
       'Pancakes',           // 20
@@ -251,7 +258,7 @@ describe('RecipeList Component - Sorting', () => {
     await act(async () => {
       await userEvent.selectOptions(sortSelect, 'time-desc');
     });
-    const recipeTitles = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
+    const recipeTitles = getRecipeTitles();
     expect(recipeTitles).toEqual([
       'Spaghetti Bolognese', // 90
       'Banana Bread',       // 70
@@ -273,13 +280,14 @@ describe('RecipeList Component - Sorting', () => {
 
     // Then filter by "dessert"
     await act(async () => {
-      await userEvent.type(searchInput, 'dessert'); // Apple Pie (60), Banana Bread (70)
+      await userEvent.type(searchInput, 'dessert'); // matches Apple Pie only
     });
 
-    const recipeTitles = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
+    // Only Apple Pie's title/description contains "dessert"
+    // (Banana Bread's description is 'Moist banana loaf').
+    const recipeTitles = getRecipeTitles();
     expect(recipeTitles).toEqual([
-      'Banana Bread', // 70 (dessert)
-      'Apple Pie',    // 60 (dessert)
+      'Apple Pie', // 60 (dessert)
     ]);
   });
 });
@@ -299,7 +307,9 @@ describe('RecipeList Component - Pagination', () => {
       mockFetchSuccess(MOCK_RECIPES_RESPONSE.data); // 7 recipes
       vi.spyOn(console, 'warn').mockImplementation(() => {});
       render(<RecipeList />);
-      await waitFor(() => expect(screen.getByText('Apple Pie')).toBeInTheDocument());
+      // Pancakes is 7th in fixture order: it only reaches page 1 once the
+      // default title sort has applied, so this waits out the sort effect.
+      await waitFor(() => expect(screen.getByText('Pancakes')).toBeInTheDocument());
     });
 
     test('displays first page correctly with "Previous" disabled and "Next" enabled', () => {
@@ -372,7 +382,8 @@ describe('RecipeList Component - Pagination', () => {
       mockFetchSuccess(MOCK_RECIPES_RESPONSE.data); // 7 recipes
       vi.spyOn(console, 'warn').mockImplementation(() => {});
       render(<RecipeList />);
-      await waitFor(() => expect(screen.getByText('Apple Pie')).toBeInTheDocument());
+      // Pancakes only reaches page 1 after the default sort applies; waits out the sort effect.
+      await waitFor(() => expect(screen.getByText('Pancakes')).toBeInTheDocument());
     });
 
     test('resets to page 1 when search term changes', async () => {
@@ -408,8 +419,8 @@ describe('RecipeList Component - Pagination', () => {
       // Should be back on page 1 of the new sorted results
       // First 6 items by time-desc: Spaghetti, Banana, Apple, Chicken, Veg, Salmon
       expect(screen.getByText('Spaghetti Bolognese')).toBeInTheDocument();
-      expect(screen.getByText('Salmon Salad')).toBeInTheDocument();
-      expect(screen.queryByText('Pancakes')).not.toBeInTheDocument(); // Pancakes is 7th by time-desc, so on page 2
+      expect(screen.getByText('Pancakes')).toBeInTheDocument();
+      expect(screen.queryByText('Salmon Salad')).not.toBeInTheDocument(); // Salmon Salad (15 min) is 7th by time-desc, so on page 2
       expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
     });
   });
