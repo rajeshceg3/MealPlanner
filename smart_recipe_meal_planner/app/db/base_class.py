@@ -17,6 +17,7 @@ class Base:
         if name == "RecipeIngredient": return "recipe_ingredients"
         if name == "UserSavedRecipe": return "user_saved_recipes"
         if name == "MealPlanRecipe": return "meal_plan_recipes"
+        if name == "MealPlan": return "meal_plans"
         # Basic pluralization
         if name.endswith("y") and name[-2] not in "aeiou": # e.g. Category -> categories
             return name[:-1].lower() + "ies"

@@ -14,18 +14,23 @@ from app.models.recipe_schemas import (
     InstructionStepPublic, # Added for RecipePublic
     IngredientUsagePublic, # Added for RecipePublic
 )
+from app.models.common_schemas import RecipeIngredientLink
 from app.services.recipe_service import RecipeService
 from app.clients.spoonacular_client import SpoonacularRateLimitException, SpoonacularException
 from app.api.v1.dependencies import get_recipe_service, get_current_active_user
 from app.db.models.user_model import User as DBUser # For mock user type hint
 
-# Mock User Model for testing
-class MockUser(DBUser):
-    id: uuid.UUID = uuid.uuid4()
-    email: str = "testuser@example.com"
-    is_active: bool = True
-    is_superuser: bool = False
-    username: str = "testuser"
+# Mock User for testing - deliberately NOT a subclass of the SQLAlchemy-mapped
+# User model: inheriting a mapped class makes SQLAlchemy configure joined-table
+# inheritance between 'users' and 'mockusers' at import time and fails.
+class MockUser:
+    def __init__(self, id=None, email="testuser@example.com", is_active=True,
+                 is_superuser=False, username="testuser", **kwargs):
+        self.id = id if id is not None else uuid.uuid4()
+        self.email = email
+        self.is_active = is_active
+        self.is_superuser = is_superuser
+        self.username = username
 
 
 @pytest.fixture
@@ -172,14 +177,11 @@ def test_import_external_recipe_success(client_for_import: TestClient, mock_reci
         rating_count=0,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
-        instructions=[InstructionStepPublic(id=uuid.uuid4(), step_number=1, instruction="Do this", recipe_id=SAMPLE_RECIPE_ID)],
+        instructions=[InstructionStepPublic(step_number=1, instruction="Do this")],
         recipe_ingredients=[IngredientUsagePublic(
-            ingredient_id=uuid.uuid4(),
-            name="Test Ingredient",
+            ingredient=RecipeIngredientLink(id=uuid.uuid4(), name="Test Ingredient", category="testing"),
             quantity=1,
             unit="cup",
-            recipe_id=SAMPLE_RECIPE_ID, # Added for completeness
-            category="testing" # Added for completeness
             )]
     )
     mock_recipe_service.import_recipe_from_spoonacular.return_value = mock_imported_recipe
